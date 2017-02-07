@@ -198,6 +198,51 @@
   </entry>
   
   <entry>
+    <title>关于自动化审计工具的一些设想</title>
+    <link href="http://blog.leej.me/2017/02/07/%E5%85%B3%E4%BA%8E%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%A1%E8%AE%A1%E5%B7%A5%E5%85%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%BE%E6%83%B3/"/>
+    <id>http://blog.leej.me/2017/02/07/关于自动化审计工具的一些设想/</id>
+    <published>2017-02-07T07:54:28.000Z</published>
+    <updated>2017-02-07T07:55:13.659Z</updated>
+    
+    <content type="html"><![CDATA[<p>###关于自动化审计工具的一些设想</p><p>源代码安全审计是在整个软件生命周期中提高系统安全性的最有效手段之一，那么该如何做，长期人工审计的方式，自然是不太合理。白盒审计往往可以达到一些黑盒测试永远触及不到的一些逻辑层面，但是成本开销比黑盒往往大的多，总是需要人工去挖掘。</p><p>这里就设想是否可以去设计一款自动化审计的工具，这里以php层面的审计为一个点。</p><p>这里给自己挖个坑，找一件长期主线的做的事</p><p>####总体设想</p><p>首先，网上有很多代码审计的工具，但是总是不符合国情，只能是作为审计的一个辅助工具，由于php的灵活性导致其框架和方法设计五花八门，路由的设计更是百家齐放。这里使用机器来完成这些有时候人工看都费劲的过程，似乎比较困难，但其实换一个角度，站在编译器的角度是不是就比较简单，这是一个发散性的问题，不做扩展。</p><p>下面说一下几种方法的进阶：</p><p>#####方法一：</p><p>工具做简单的字符串搜索，必要时加正则匹配，函数参数是否变量</p><p>这种方法的优点是简单粗暴，其实人工审计在头脑中做逻辑处理，其机械的判断，函数定位大部分依赖的就是关键字搜索，但是这些只能做以辅助，大部分还是依赖人工去检测，最重要的就是无法处理逻辑层面</p><p>#####方法二：</p><p>全文扫描，静态追踪调用，可以简单对代码做一个语义的分析，对危险函数参数来源等做一个追踪，这一部分由于比较麻烦的就是在函数的调用参数的传递这一方面不容易做，还有参数的作用域，如何判定，都是比较不容易处理的，需要对一个框架尤其是各个模块之间调用方法方式要有一个很全面的分析。这种做到后面其实就是从编译器的角度去看代码，这种方式相对也是比较好的，但是缺点就是实现起来比较困难，尤其是一些框架，代码的入口调用这些方面</p><p>#####方法三：</p><p>Hook PHP的一些关键函数，当代码执行一些关键函数，跟踪执行流，找寻危险函数的参数来源，判断参数来源是否可控，这种方法思想上其实也是不错的，但是还是需要人工干预，框架的分析这部分还是不是很好做，思路还是很好</p><p>#####方法四：</p><p>黑盒测试，模拟人工进行黑盒测试，在对关键日志做一个简单分析，比如sql语句的执行操作，如果从这个角度做，模拟人工的一些黑盒测试，站在程序的角度，所能理解的就是一些日志文件，还有就是请求的返回状态，返回内容。通过这些，在结合代码，或许会要好一些，但是最困难的就是如何把这部分黑盒测试对应到其代码，不仅要对框架的理解要很深入，还要能让代码去理解这部分框架，php框架也是五花八门，这部分具体操作起来，即使做出来，普适性也会比较低。</p><p>#####方法五：</p><p>程序模拟人工实现动态调试，可以自己程序来实现dbgp协议的一些解释，模拟ide来动态调试代码，这一部分比较有意思，因为实现起来比去hook要简单一些，并且对程序的逻辑判断，流程控制要简单的多，这一部分处理逻辑流程相对来说也是比较好的</p><h3 id="设计设想"><a href="#设计设想" class="headerlink" title="设计设想"></a>设计设想</h3><p>有了上面几种方案后，做一个构思</p><h5 id="第一步：预处理"><a href="#第一步：预处理" class="headerlink" title="第一步：预处理"></a>第一步：预处理</h5><p>首先第一步我认为是需要做一个全局的搜索，这部分是简单的扫描和处理阶段，这部分首先要对目录结构，函数定义，控制器的位置，这一部分做一个检索，这一部分结束后，程序可以返回一个方法表，方法表的成员有文件路径，所在类，方法名，方法属性，还有方法下的变量，这些值得获取应该使用字符串搜索加正则可以做到，毕竟大括号也是成对出现的，变量都有$符号</p><p>#####第二步：危险检索</p><p>对全文进行一些危险匹配，比如一些函数还有sql特征的语句，这一部分正则还有字符匹配也是可以做到的，可以做一个危险操作池，这里每一处危险操作需要有一个定位，这里需要文件地址，所在类名，是否继承了哪个类，方法名，方法中的关联的变量，这一步检索出来的危险操作肯定是有很多的无法利用点，下一步就是该如何去筛选去除</p><p>#####第三步：模糊测试</p><p>模糊测试，对一个公共的过滤做一个测试，比如找一个有sql操作的接口，通过发有特征的包然后检索sql操作日志找到点后尝试一些关键字符，做一个过滤匹配，这一步应该还是比较不好做的</p><p>#####第四步：危险定位</p><p>定位各危险函数，如何自动触发函数这也是个难点，这一步可以人工干预，在结合之前的的方法表，对函数调用和参数传递做一个简单追踪，之后通过xdebug等调试来进行下一步的操作</p><p>#####第五步</p><p>就是将上一步筛选的危险操作输出，下一步还是人工干预处理</p><p>####最后</p><p>​        其实在这一方面，左思右想如何能让机器去替代人工去思考代码，这里只是最简单的不带有思考方式，未来的发展是否可以使用机器学习的方式来进行也是一个可利用的点。</p><p>说到底代码审计最重要的就是输入这一块，对所有的用户来源的点做一个追踪，比如get，post还有http头，从上往下做跟踪，或许也是可行的，但是这种广撒网的方式针对性较低效率不是很高，我们这里是从危险操作向上溯源，有针对性，但是操作起来较为复杂，反正各有优劣吧。</p><p>​       代码审计，要对代码的安全有一个感性的认知，我们在去利用攻击的时候，总要有一个点，这个点可以是get提交的一段数据，可以是来自cookie的一段数据，也可以是通过使某些服务端发出请求获取到的一段内容，如果是我和服务器之间的接触这一部分主要是get还有post等这些，服务端在对这些数据进行一些处理，从程序员的角度来看，一般有什么是需要提交过来的呢？一般可能就是一些未知的，或者是某些行为界定的层面，比如就是如何知道用户需要查看某篇文章，如果框架在入口对数据的进入层面做了一个封装过滤，如果是想找寻注入，如果字段是一个字符串，我们其实就是想找一个单引号，这一点如果是直接从输入层面就过滤了单引号，那么我们在从输入的角度去尝试单引号都是无济于事的，我们的思路就不能老卡在这里。</p><p>​      假设程序是一座城池，他在一个入口做了严格的把控，那是否还有其余的入口？这个时候就可以考虑是不是有可以伪装进去比如这么一个操作，比如base64，或者urldecode，或者是程序在更新的时候，向某个远程服务器发起获取版本的请求，之后会拿远程响应的数据带入数据库？这部分我们能不能去劫持或者直接控制请求地址？总之我们的目的就是传递进去或者创造一个单引号，但不可能凭空进来。扯远了。</p><p>​      我想说的是我们在审计编写工具的时候，是否可以考虑到这些，如何更智能，这一部分如何可以将思维转化成代码，还没有想出一个可行的方法。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;###关于自动化审计工具的一些设想&lt;/p&gt;
+&lt;p&gt;源代码安全审计是在整个软件生命周期中提高系统安全性的最有效手段之一，那么该如何做，长期人工审计的方式，自然是不太合理。白盒审计往往可以达到一些黑盒测试永远触及不到的一些逻辑层面，但是成本开销比黑盒往往大的多，总是需要人工去挖
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title></title>
+    <link href="http://blog.leej.me/2017/02/07/%E5%8D%9A%E5%AE%A2%E7%AC%94%E8%AE%B0/"/>
+    <id>http://blog.leej.me/2017/02/07/博客笔记/</id>
+    <published>2017-02-07T07:53:24.315Z</published>
+    <updated>2017-02-07T07:53:24.315Z</updated>
+    
+    <content type="html"><![CDATA[<p>博客笔记</p><p>博客换了好几次主题，这里记录一下</p><figure class="highlight plain"><figcaption><span>apt-get install nodejs```</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">```sudo npm install hexo -g</span><br></pre></td></tr></table></figure><figure class="highlight plain"><figcaption><span>init <dir>```</dir></span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">发布到git:https://hexo.io/docs/deployment.html</span><br><span class="line"></span><br><span class="line">### Create a new post</span><br></pre></td></tr></table></figure><p>$ hexo new “My New Post”</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">More info: [Writing](https://hexo.io/docs/writing.html)</span><br><span class="line"></span><br><span class="line">### Run server</span><br></pre></td></tr></table></figure><p>$ hexo server</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">More info: [Server](https://hexo.io/docs/server.html)</span><br><span class="line"></span><br><span class="line">### Generate static files</span><br></pre></td></tr></table></figure><p>$ hexo generate</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">More info: [Generating](https://hexo.io/docs/generating.html)</span><br><span class="line"></span><br><span class="line">### Deploy to remote sites</span><br></pre></td></tr></table></figure><p>$ hexo deploy</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">More info: [Deployment](https://hexo.io/docs/deployment.html) </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">主题：[cactus-dark](https://github.com/probberechts/cactus-dark)</span><br><span class="line"></span><br><span class="line">## Install</span><br><span class="line"></span><br><span class="line">1. In the `root` directory:</span><br></pre></td></tr></table></figure><p>   $ git clone <a href="https://github.com/probberechts/cactus-dark.git" target="_blank" rel="noopener">https://github.com/probberechts/cactus-dark.git</a> themes/cactus-dark<br>   $ npm install hexo-pagination –save</p>   <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">2. Change the `theme` property in the `config.yml` file.</span><br></pre></td></tr></table></figure><h1 id="theme-landscape"><a href="#theme-landscape" class="headerlink" title="theme: landscape"></a>theme: landscape</h1><p>   theme: cactus-dark<br>   ```</p><ol><li>Run: <code>hexo generate</code> and <code>hexo server</code> </li></ol>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;博客笔记&lt;/p&gt;
+&lt;p&gt;博客换了好几次主题，这里记录一下&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;figcaption&gt;&lt;span&gt;apt-get install nodejs```&lt;/span&gt;&lt;/figcaption&gt;&lt;table&gt;&lt;t
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
     <title>Pthon学习之教务处的登录，以及安全思考</title>
     <link href="http://blog.leej.me/2017/01/19/Pthon%E5%AD%A6%E4%B9%A0%E4%B9%8B%E6%95%99%E5%8A%A1%E5%A4%84%E7%9A%84%E7%99%BB%E5%BD%95%EF%BC%8C%E4%BB%A5%E5%8F%8A%E5%AE%89%E5%85%A8%E6%80%9D%E8%80%83/"/>
     <id>http://blog.leej.me/2017/01/19/Pthon学习之教务处的登录，以及安全思考/</id>
