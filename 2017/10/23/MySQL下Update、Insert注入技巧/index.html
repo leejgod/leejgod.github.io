@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.">
+<meta name="keywords" content="注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL下Update、Insert注入技巧">
+<meta property="og:url" content="http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1fkrjc7meguj206703cjr5.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1fkrjoo6lrwj206603pgld.jpg">
+<meta property="og:updated_time" content="2018-02-07T04:11:15.598Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL下Update、Insert注入技巧">
+<meta name="twitter:description" content="审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.">
+<meta name="twitter:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1fkrjc7meguj206703cjr5.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>MySQL下Update、Insert注入技巧</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2018/02/07/hello-world/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2017/09/30/xdebug插件攻击/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&text=MySQL下Update、Insert注入技巧"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&is_video=false&description=MySQL下Update、Insert注入技巧"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL下Update、Insert注入技巧&body=Check out this article: http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&name=MySQL下Update、Insert注入技巧&description=&lt;p&gt;审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.&lt;/p&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL下Update、Insert注入技巧"><span class="toc-number">1.</span> <span class="toc-text">MySQL下Update、Insert注入技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x01"><span class="toc-number">1.0.1.</span> <span class="toc-text">0x01</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02"><span class="toc-number">1.0.2.</span> <span class="toc-text">0x02</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        MySQL下Update、Insert注入技巧
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-10-23T10:07:57.000Z" itemprop="datePublished">2017-10-23</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/注入/">注入</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.</p>
+<a id="more"></a>
+<h1 id="MySQL下Update、Insert注入技巧"><a href="#MySQL下Update、Insert注入技巧" class="headerlink" title="MySQL下Update、Insert注入技巧"></a>MySQL下Update、Insert注入技巧</h1><h3 id="0x01"><a href="#0x01" class="headerlink" title="0x01"></a>0x01</h3><p>首先要知道的一些内容</p>
+<p>一 、</p>
+<p>在之前的false注入中提到有关于字符串是会转成double处理 如果进行一些运算 会warning 当做0</p>
+<p>二、</p>
+<p>double的数据长度是八字节, 可以存储八个字符</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1fkrjc7meguj206703cjr5.jpg" alt=""> </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1fkrjoo6lrwj206603pgld.jpg" alt=""> </p>
+<h3 id="0x02"><a href="#0x02" class="headerlink" title="0x02"></a>0x02</h3><p>不啰嗦其他的 这里一个例子说明 利用方式</p>
+<p>原始mysql语句:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UPDATE user SET name=&apos;leej&apos;;</span><br></pre></td></tr></table></figure>
+<p>这里不用盲注入  想要之间回显结果 该如何?</p>
+<p>既然字符串利用运算符号可以转为double的0,那就在这里操作</p>
+<p>首先’leej’&lt;==&gt;0</p>
+<p>‘leej’+666&lt;==&gt;0+666</p>
+<p>‘leej’+conv(hex(user()),16,10)&lt;==&gt;conv(hex(user()),16,10)==&gt;user()就可以以十进制的方式存进去了,这里只要找到user字段的输出就可以了.</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL下Update、Insert注入技巧"><span class="toc-number">1.</span> <span class="toc-text">MySQL下Update、Insert注入技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x01"><span class="toc-number">1.0.1.</span> <span class="toc-text">0x01</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02"><span class="toc-number">1.0.2.</span> <span class="toc-text">0x02</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&text=MySQL下Update、Insert注入技巧"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&is_video=false&description=MySQL下Update、Insert注入技巧"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MySQL下Update、Insert注入技巧&body=Check out this article: http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&title=MySQL下Update、Insert注入技巧"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/10/23/MySQL下Update、Insert注入技巧/&name=MySQL下Update、Insert注入技巧&description=&lt;p&gt;审计了不少代码,再看代码的时候最多出现的就是注入,很多都是在update还有insert的时候,利用起来可能都是比较固定,有时候思维僵化并没有去考虑过在这里的一些技巧,之前刚好看到文章这里记录一下.&lt;/p&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+

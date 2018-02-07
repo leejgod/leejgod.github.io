@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解">
+<meta name="keywords" content="密码学">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分组密码CBC加密缺陷">
+<meta property="og:url" content="http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgtp29e1oj211t0i1dhg.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgtpm50czj21050frmyk.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgu1ahos3j210u0dgdhj.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgu1xi3qoj21460cstar.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffguy1ae90j20lo09lt97.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1ffkan9bhisj20oi08kab5.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkb8les6tj20f206mgm2.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkbgq2ag6j20f1076wf8.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkc7h3gafj20dp0773z8.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkck29su9j20dp07cmxw.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkd1mg5ssj20e207jaat.jpg">
+<meta property="og:updated_time" content="2018-02-07T04:11:15.627Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分组密码CBC加密缺陷">
+<meta name="twitter:description" content="关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解">
+<meta name="twitter:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgtp29e1oj211t0i1dhg.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>分组密码CBC加密缺陷</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2017/05/16/凤求凰/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&text=分组密码CBC加密缺陷"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&is_video=false&description=分组密码CBC加密缺陷"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=分组密码CBC加密缺陷&body=Check out this article: http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&name=分组密码CBC加密缺陷&description=&lt;p&gt;关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解&lt;/p&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#CBC加密模式"><span class="toc-number">1.</span> <span class="toc-text">CBC加密模式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#字节翻转攻击"><span class="toc-number">1.1.</span> <span class="toc-text">字节翻转攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#概述"><span class="toc-number">1.1.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详解"><span class="toc-number">1.1.2.</span> <span class="toc-text">详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CTF实例"><span class="toc-number">1.1.3.</span> <span class="toc-text">CTF实例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Padding-Oracle-Attack"><span class="toc-number">1.2.</span> <span class="toc-text">Padding Oracle Attack</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#概述-1"><span class="toc-number">1.2.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详解-1"><span class="toc-number">1.2.2.</span> <span class="toc-text">详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实例"><span class="toc-number">1.2.3.</span> <span class="toc-text">实例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">1.2.4.</span> <span class="toc-text">参考</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        分组密码CBC加密缺陷
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-05-15T02:04:47.000Z" itemprop="datePublished">2017-05-15</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/密码学/">密码学</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解</p>
+<a id="more"></a>
+<h1 id="CBC加密模式"><a href="#CBC加密模式" class="headerlink" title="CBC加密模式"></a>CBC加密模式</h1><p>首先上图</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgtp29e1oj211t0i1dhg.jpg" alt="">  </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgtpm50czj21050frmyk.jpg" alt=""> </p>
+<p>这里文字描述不如看图直观，还是大致描述一下，CBC模式的加密方式是通过一个初始向量（IV）先和明文分组第一组异或后使用秘钥K加密，作为第一组密文，同时又与后一分组的明文异或后进行加密产生下一组密文，依次重复。</p>
+<p>其解密和加密是对称的，密文先解密，再异或。</p>
+<p>关于这个初始向量IV的完整性要比其保密性更为重要。在CBC模式下，最好是每发一个消息，都改变IV，比如将其值加一。</p>
+<p>这里说说有关于CBC的错误传播，有利于之后字节翻转攻击的理解</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgu1ahos3j210u0dgdhj.jpg" alt="">  </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffgu1xi3qoj21460cstar.jpg" alt="">  </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffguy1ae90j20lo09lt97.jpg" alt="">  </p>
+<p>其特点如下：</p>
+<ol>
+<li>明文有一组中有错，会使以后的密文组都受影响，但经解密后的恢复结果，除原有误的一组外，其后各组明文都正确地恢复。</li>
+<li>解密时，有一组秘钥错误，该错误会影响下一分组相同位置的解密</li>
+<li>若在传送过程中，某组密文组出错时，则该组恢复的明文和下一组恢复数据出错。再后面的组将不会受中错误比特的影响。</li>
+</ol>
+<h2 id="字节翻转攻击"><a href="#字节翻转攻击" class="headerlink" title="字节翻转攻击"></a>字节翻转攻击</h2><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>有关于这里的攻击，没有下面那种方式刺激，但是效果也还是可以</p>
+<p>这里最大的效果就是：<strong>在不知道Key(秘钥)的情况下篡改明文</strong>。</p>
+<p>通过上面的错误传播，我们可以想到，解密时通过修改前一个密文分组可以影响后一个的解密后的明文分组</p>
+<p>这里修改可以将前一个密文中的任意比特进行修改（0,1进行翻转）</p>
+<h3 id="详解"><a href="#详解" class="headerlink" title="详解"></a>详解</h3><p>这里举个例子：</p>
+<p>明文是”lee-jayy:12345678$,ohh he is very rich!”</p>
+<p>这里使用DES算法，秘钥<code>key = &quot;leejleej&quot;</code>初始向量<code>iv=&#39;thisisiv&#39;</code></p>
+<p>加密结果为：<code>04f2e7d245cec18f6c1769c66f0e30ccc30a378c58597b15409a0a8c296df6a66a10679b55ddbabb</code></p>
+<p>第一步将消息分组，其des算法的分组长度是64bit，一个字符是8bit故8个字符一组，如下</p>
+<p>第一组：<code>lee-jayy</code></p>
+<p>第二组：<code>:1234567</code></p>
+<p>第三组：<code>8$,ohh h</code></p>
+<p>第四组：<code>eis ver</code></p>
+<p>第五组：<code>y rich!</code></p>
+<p>这里我想把第二组的第2个字符“1”改为“9”，这里该如何操作？</p>
+<p>由上面的特点我们知道，修改第n分组的秘文，其第n+1分组的明文会被窜改，这里我们待修改的字符在第二分组，我们可以修改第一分组的密文来控制第二分组。</p>
+<p>为了方便我把密文也分组一下：</p>
+<p>04f2e7d245cec18f</p>
+<p>6c1769c66f0e30cc</p>
+<p>c30a378c58597b15</p>
+<p>409a0a8c296df6a6</p>
+<p>6a10679b55ddbabb</p>
+<p>由于这里需要修改的字符“1”位于第二分组的第二个字符，所以我们只需修改第一分组相同的位置的密文</p>
+<p>，一个字符是16bit两个十六进制位，故我们需要修改第一分组密文的“f2”，这里改如何改呢？</p>
+<p>在改之前我们先了解一个基本知识，有关于异或：</p>
+<p>异或的规则是相同为0，不同为1</p>
+<p>于是有1 xor 1 =0，1 xor 0 =1，0 xor 0 = 0</p>
+<p>可以看出这么一个规则，<strong>A xor B = C  &lt;=&gt; A xor C = B</strong></p>
+<p>这时候可以回看一下上面的解密的图</p>
+<p>我们知道的东西有：</p>
+<p>1、第二组des算法加密后要和第一组的密文异或得到第二组的密文</p>
+<p>2、字符1的ascii码16进制是31</p>
+<p>3、字符1经过cbc后的密文要和f2进行异或</p>
+<p>这里我们并不晓得其秘钥key，这里我们假设第二组des算法加密后16进制是ABCDEFGHIGKLMNOP，故字符1经过DES加密的结果是AB</p>
+<p>第一步、我们根据上面的算法知道  AB xor f2 = 31，这里04是字符1的密文，我们需要解出AB，只需要f2 xor 31既可得出1经过des算法加密后是C3</p>
+<p>第二步、我们利用上一步计算出的DES对字符1加密的结果35异或待修改的字符“9”(其ascii码为39)。</p>
+<p>C3 xor 39 = FA</p>
+<p>第三步、修改密文中第一分组开始的f2为FA，修改后的密文是：</p>
+<p><code>04FAe7d245cec18f6c1769c66f0e30ccc30a378c58597b15409a0a8c296df6a66a10679b55ddbabb</code></p>
+<p>可以对比一下输出：</p>
+<p>修改前：<code>lee-jayy:12345678$,ohh he is very rich!</code></p>
+<p>修改后：<code>4糉L柖292345678$,ohh he is very rich!</code></p>
+<p>看出对应的1的确变为了9</p>
+<p>利用同样方法我把1234567修改为了9999999，秘文为<code>04FAECD848C2CE816c1769c66f0e30ccc30a378c58597b15409a0a8c296df6a66a10679b55ddbabb</code></p>
+<p>结果：<code>d&amp;φΤ5ς:99999998$,ohh he is very rich!</code></p>
+<p>加密脚笨如下,有兴趣可以自己试一试：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">jiami_DES</span><span class="params">($input = <span class="string">""</span>,$key = <span class="string">"leejleej"</span>,$iv=<span class="string">'thisisiv'</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">$td = mcrypt_module_open(MCRYPT_DES, <span class="string">''</span>, MCRYPT_MODE_CBC, <span class="string">''</span>);</span><br><span class="line">mcrypt_generic_init($td, $key, $iv);</span><br><span class="line"></span><br><span class="line">$encrypted_data = mcrypt_generic($td, $input);</span><br><span class="line"></span><br><span class="line">mcrypt_generic_deinit($td);</span><br><span class="line">mcrypt_module_close($td);</span><br><span class="line"><span class="keyword">return</span> bin2hex($encrypted_data);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">jiemi_DES</span><span class="params">($input = <span class="string">""</span>,$key = <span class="string">"leejleej"</span>,$iv=<span class="string">'thisisiv'</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">$td = mcrypt_module_open(MCRYPT_DES, <span class="string">''</span>, MCRYPT_MODE_CBC, <span class="string">''</span>);</span><br><span class="line">mcrypt_generic_init($td, $key, $iv);</span><br><span class="line">$mdecrypted_data = mdecrypt_generic($td,hex2bin($input));<span class="comment">//$encrypted_data);</span></span><br><span class="line">mcrypt_generic_deinit($td);</span><br><span class="line">mcrypt_module_close($td);</span><br><span class="line"><span class="keyword">return</span> $mdecrypted_data;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> jiami_DES(<span class="string">'lee-jayy:12345678$,ohh he is very rich!'</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">'&lt;br /&gt;'</span>;</span><br><span class="line"><span class="keyword">echo</span> jiemi_DES($_GET[<span class="string">'key'</span>]);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="CTF实例"><a href="#CTF实例" class="headerlink" title="CTF实例"></a>CTF实例</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> twisted.internet <span class="keyword">import</span> reactor, protocol</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">from</span> secret <span class="keyword">import</span> KEY,KEYSIZE,IV,FLAG</span><br><span class="line"></span><br><span class="line">PORT = <span class="number">6666</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">pad</span><span class="params">(instr, length)</span>:</span></span><br><span class="line">        <span class="keyword">if</span>(length == <span class="keyword">None</span>):</span><br><span class="line">                <span class="keyword">print</span> <span class="string">"Supply a length to pad to"</span></span><br><span class="line">        <span class="keyword">elif</span>(len(instr) % length == <span class="number">0</span>):</span><br><span class="line">                <span class="keyword">print</span> <span class="string">"No Padding Needed"</span></span><br><span class="line">                <span class="keyword">return</span> instr</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">return</span> instr + <span class="string">'\x04'</span> * (length - (len(instr) % length ))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encrypt_block</span><span class="params">(key, plaintext)</span>:</span></span><br><span class="line">        encobj = AES.new(key, AES.MODE_ECB)</span><br><span class="line">        <span class="keyword">return</span> encobj.encrypt(plaintext).encode(<span class="string">'hex'</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">decrypt_block</span><span class="params">(key, ctxt)</span>:</span></span><br><span class="line">        decobj = AES.new(key, AES.MODE_ECB)</span><br><span class="line">        <span class="keyword">return</span> decobj.decrypt(ctxt).encode(<span class="string">'hex'</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">xor_block</span><span class="params">(first,second)</span>:</span></span><br><span class="line">        <span class="keyword">if</span>(len(first) != len(second)):</span><br><span class="line">                <span class="keyword">print</span> <span class="string">"Blocks need to be the same length!"</span></span><br><span class="line">                <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line"></span><br><span class="line">        first = list(first)</span><br><span class="line">        second = list(second)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>,len(first)):</span><br><span class="line">                first[i] = chr(ord(first[i]) ^ ord(second[i]))</span><br><span class="line">        <span class="keyword">return</span> <span class="string">''</span>.join(first)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encrypt_cbc</span><span class="params">(key,IV, plaintext)</span>:</span></span><br><span class="line">        <span class="keyword">if</span>(len(plaintext) % len(key) != <span class="number">0</span>): <span class="comment">#加密文本的长度必须能整除Key,否则在后面加x40</span></span><br><span class="line">                plaintext = pad(plaintext,len(key))</span><br><span class="line">        blocks = [plaintext[x:x+len(key)] <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">0</span>,len(plaintext),len(key))]</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>,len(blocks)):</span><br><span class="line">                <span class="keyword">if</span> (i == <span class="number">0</span>):</span><br><span class="line">                        ctxt = xor_block(blocks[i],IV)</span><br><span class="line">                        ctxt = encrypt_block(key,ctxt)</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                        tmp = xor_block(blocks[i],ctxt[<span class="number">-1</span> * (len(key) * <span class="number">2</span>):].decode(<span class="string">'hex'</span>)) </span><br><span class="line">                        ctxt = ctxt + encrypt_block(key,tmp)</span><br><span class="line">        <span class="keyword">return</span> ctxt</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">decrypt_cbc</span><span class="params">(key,IV,ctxt)</span>:</span></span><br><span class="line">        ctxt = ctxt.decode(<span class="string">'hex'</span>)</span><br><span class="line">        <span class="keyword">if</span>(len(ctxt) % len(key) != <span class="number">0</span>):</span><br><span class="line">                <span class="keyword">print</span> <span class="string">"Invalid Key."</span></span><br><span class="line">                <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line">        blocks = [ctxt[x:x+len(key)] <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">0</span>,len(ctxt),len(key))]</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>,len(blocks)):</span><br><span class="line">                <span class="comment">#print blocks[0].encode('hex')</span></span><br><span class="line">                <span class="keyword">if</span> (i == <span class="number">0</span>):</span><br><span class="line">                        ptxt = decrypt_block(key,blocks[i])</span><br><span class="line">                        ptxt = xor_block(ptxt.decode(<span class="string">'hex'</span>),IV)</span><br><span class="line">                        <span class="comment">#print ptxt.encode('hex')</span></span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                        tmp = decrypt_block(key,blocks[i])</span><br><span class="line">                        tmp = xor_block(tmp.decode(<span class="string">'hex'</span>),blocks[i<span class="number">-1</span>])</span><br><span class="line">                        ptxt = ptxt + tmp</span><br><span class="line">        <span class="keyword">return</span> ptxt</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">mkprofile</span><span class="params">(email)</span>:</span></span><br><span class="line">	<span class="keyword">if</span>((<span class="string">";"</span> <span class="keyword">in</span> email)):</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line">	prefix = <span class="string">"comment1=wowsuch%20CBC;userdata="</span></span><br><span class="line">	suffix = <span class="string">";coment2=%20suchsafe%20very%20encryptwowww"</span></span><br><span class="line">	</span><br><span class="line">	ptxt = prefix + email + suffix <span class="comment">#连接字符串</span></span><br><span class="line">	<span class="keyword">print</span> ptxt</span><br><span class="line">	<span class="keyword">return</span> encrypt_cbc(KEY,IV,ptxt)	</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parse_profile</span><span class="params">(data)</span>:</span></span><br><span class="line">	<span class="keyword">print</span> <span class="string">"DATA:"</span></span><br><span class="line">	<span class="keyword">print</span> data	</span><br><span class="line">	ptxt = decrypt_cbc(KEY,IV,data.encode(<span class="string">'hex'</span>))</span><br><span class="line">	ptxt = ptxt.replace(<span class="string">"\x04"</span>,<span class="string">""</span>)</span><br><span class="line">	<span class="keyword">print</span> ptxt</span><br><span class="line">	<span class="keyword">if</span> <span class="string">";admin=true"</span> <span class="keyword">in</span> ptxt:</span><br><span class="line">		<span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyServer</span><span class="params">(protocol.Protocol)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">dataReceived</span><span class="params">(self,data)</span>:</span></span><br><span class="line">	<span class="keyword">if</span>(len(data) &gt; <span class="number">512</span>):</span><br><span class="line">		self.transport.write(<span class="string">"Data too long.\n"</span>)</span><br><span class="line">		self.transport.loseConnection()</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(data.startswith(<span class="string">"mkprof:"</span>)):</span><br><span class="line">		data = data[<span class="number">7</span>:]</span><br><span class="line">		resp = mkprofile(data)</span><br><span class="line">		<span class="keyword">if</span> (resp == <span class="number">-1</span>):</span><br><span class="line">			self.transport.write(<span class="string">"No Cheating!\n"</span>)</span><br><span class="line">		<span class="keyword">else</span>:</span><br><span class="line">			self.transport.write(resp + <span class="string">'\n'</span>)</span><br><span class="line">	<span class="keyword">elif</span>(data.startswith(<span class="string">"parse:"</span>)):</span><br><span class="line">		self.transport.write(<span class="string">"Parsing Profile..."</span>)</span><br><span class="line">		data = data[<span class="number">6</span>:].decode(<span class="string">'hex'</span>)</span><br><span class="line">		<span class="keyword">if</span> (len(data) % KEYSIZE != <span class="number">0</span>):</span><br><span class="line">			self.transport.write(<span class="string">"Invalid Ciphertext &lt;length&gt;\n"</span>)</span><br><span class="line">			self.transport.loseConnection()</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span>(parse_profile(data) == <span class="number">1</span>):</span><br><span class="line">			self.transport.write(<span class="string">"Congratulations!\nThe FLAG is: "</span>)</span><br><span class="line">			self.transport.write(FLAG)</span><br><span class="line">			self.transport.loseConnection()</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">else</span>:</span><br><span class="line">			self.transport.write(<span class="string">"You are a normal user.\n"</span>)</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		self.transport.write(<span class="string">"Syntax Error"</span>)</span><br><span class="line">		self.transport.loseConnection()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyServerFactory</span><span class="params">(protocol.Factory)</span>:</span></span><br><span class="line">    protocol = MyServer</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">factory = MyServerFactory()</span><br><span class="line">reactor.listenTCP(PORT, factory)</span><br><span class="line">reactor.run()</span><br></pre></td></tr></table></figure>
+<p>wp:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">sh = remote(<span class="string">'133.130.52.128'</span>,<span class="number">6666</span>)</span><br><span class="line">target = <span class="string">";admin=true"</span></span><br><span class="line">email = <span class="string">'0000000000000000000000'</span></span><br><span class="line">prefix = <span class="string">"comment1=wowsuch%20CBC;userdata="</span></span><br><span class="line">suffix = <span class="string">";coment2=%20suchsafe%20very%20encryptwowww"</span></span><br><span class="line">ptxt = prefix + email + suffix</span><br><span class="line"></span><br><span class="line">sh.send(<span class="string">'mkprof:'</span> + email)</span><br><span class="line">s = sh.recv(<span class="number">1024</span>)[<span class="number">0</span>:len(ptxt)*<span class="number">2</span>]</span><br><span class="line">s = list(s.decode(<span class="string">'hex'</span>))</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(len(target)):</span><br><span class="line">    s[<span class="number">32</span>+i] = p8( u8(s[<span class="number">32</span>+i]) ^ u8(target[i]) ^ u8(ptxt[<span class="number">48</span>+i]) )</span><br><span class="line">s = <span class="string">''</span>.join(s).encode(<span class="string">'hex'</span>)</span><br><span class="line">sh.send(<span class="string">'parse:'</span> + s)</span><br><span class="line"><span class="keyword">print</span> sh.recv(<span class="number">1024</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="Padding-Oracle-Attack"><a href="#Padding-Oracle-Attack" class="headerlink" title="Padding Oracle Attack"></a>Padding Oracle Attack</h2><h3 id="概述-1"><a href="#概述-1" class="headerlink" title="概述"></a>概述</h3><p>有关于这种方式的攻击，实在是巧妙！</p>
+<p>首先说一下使用条件，以及可以达到的效果。</p>
+<p>使用条件：</p>
+<p>一、<code>我们可以修改iv(在我的理解其实这里如果数据分组大于1组其实不需要iv也可以进行攻击)</code></p>
+<p>二、<code>我们知道密文</code></p>
+<p>三、<code>我们可以利用服务端进行解密</code></p>
+<p>效果：<code>获取明文！(如果分组大于1组，没有iv的情况这里可以获取到部分明文)</code></p>
+<h3 id="详解-1"><a href="#详解-1" class="headerlink" title="详解"></a>详解</h3><p>首先介绍一下对于分组加密过程中数据填充常用的方式(<a href="http://www.di-mgt.com.au/cryptopad.html#PKCS5" target="_blank" rel="noopener">PKCS#5</a>)</p>
+<p>这种方式其实就是缺少多少字节就补充多少字节，其补充的数值就是填充的字节的数量比如数据差2字节，我们就补充两个0x02即可，就是差几个补几个几，如下图。</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1ly1ffkan9bhisj20oi08kab5.jpg" alt="">  </p>
+<p>下面我们回顾一下关于cbc模式的解密方式</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkb8les6tj20f206mgm2.jpg" alt="">   </p>
+<p>这里对每一分组进行一下细分，</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkbgq2ag6j20f1076wf8.jpg" alt="">  </p>
+<p>可以看出末尾的数值为四个0×04，即为填充，这里如果填充的数值不对或者没有进行填充，<strong>解密过程往往不会进行，同时程序会报异常。</strong></p>
+<p>有了这个特性，我们就有了利用点，在这一点有些类似于在SQL注入中的盲注的思想。</p>
+<p>下面具体分析一下：</p>
+<p>在sql注入中，盲注我们通常是只有两种状态，<code>true</code>和<code>false</code></p>
+<p>这里又是如何区分的呢？这里先具体看看具体原理分析</p>
+<p>之前说到的使用条件是，我们可以修改iv、知道密文同时我们可以利用服务端进行解密</p>
+<p>这里构造一个例子，如果服务端如果给用户设置了这样的cookie：key=6d367076036e2239|f851d6cc68fc9537</p>
+<p>我们推测出‘|’之前的是iv，其后面的是加密结果，这个时候如果这里我将iv设置为0000000000000000</p>
+<p>即为key=0000000000000000|f851d6cc68fc9537，发现这个时候页面出错了</p>
+<p>看一下这样子的解密过程</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkc7h3gafj20dp0773z8.jpg" alt="">  </p>
+<p>这里之前提到的有关填充，可以知道不管消息多长，最后肯定是有填充的，其中填充数值范围和分组的大小有关，这里如果是DES算法8字节一组的话那么最后一位的范围一定是在0x01~0x08之间的，这里0x3D不是这个范围故出错。</p>
+<p>这时候使程序不出错只有最后一位是0x01才可以</p>
+<p>我们开始修正iv，发现当iv为000000000000003C的时候程序没有报错了，这个时候分析一下解密过程</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkck29su9j20dp07cmxw.jpg" alt="">  </p>
+<p>这个这个时候0x3D异或0x3C为0x01，程序以为这里的填充位为一位，之前的全是数据，没毛病，开始解密</p>
+<p>我们在这里0x3c可以穷举得出，中间值0x3d可以利用0x01异或0x3c计算出，同时我们还知道一个原始的iv=6d367076036e2239。</p>
+<p>由于<code>明文 = 中间值 xor IV</code>，我们列两个式子</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">0x01 = 中间值 xor 0x3c</span><br><span class="line"></span><br><span class="line">待求明文 = 中间值 xor 0x39</span><br></pre></td></tr></table></figure>
+<p>这里一个二元一次方程，不难解出待求明文。</p>
+<p>这时候继续向前一位进行攻击，这时候需要后两位为0x02</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ffkd1mg5ssj20e207jaat.jpg" alt="">  </p>
+<p>第八位已经计算出，这里只需要重复之前的方法计算第七位即可</p>
+<p>最开始看到这里会觉得有些疑问，为什么我们不能直接多位一起计算，这里可能会出现这么一个情况，假设最后一位是一个合理的填充（假设八字节分组0x01~0x08）第七位是个错误的值时候，就会出现非预期的错误，比如中间值的后两位为0x00和0x02，我们构造的初始向量的后两位为0x02和0x00，这时候程序并不会报错。</p>
+<p> 以此类推我们便可以获取到明文。</p>
+<p>如果这里我们并<strong>不知道初始iv</strong>，在这里我们依然可以进行攻击，只不过第一组的数据无法获取到</p>
+<p>仔细回顾一下上述的加密方式，我们的初始iv只是加密第一组数据中用得到，加密第二组数据的时候其实就是用的第一组的密文充当iv的角色继续加密，我们这里只需要不断修改分组上一分组的密文即可得到下一组的明文。</p>
+<h3 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h3><p>有关的例子：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> </span><br><span class="line">$type = <span class="string">"aes-128-cbc"</span>;	<span class="comment">//加密类型，即分组大小为16</span></span><br><span class="line">$P = <span class="string">"aaaaaaa"</span>;	<span class="comment">//明文</span></span><br><span class="line">$Key = <span class="string">"aAbBcCdDeE"</span>;	<span class="comment">//加密要用到的Key</span></span><br><span class="line">$IV = <span class="string">"thisivthisivthis"</span>;	<span class="comment">//初始化向量，因为有一个异或的过程，所以它的大小和分组大小要一样</span></span><br><span class="line">$C = openssl_encrypt($P, $type, $Key, OPENSSL_RAW_DATA, $IV);</span><br><span class="line"><span class="comment">//满足padding oracle attack前提条件1</span></span><br><span class="line"><span class="keyword">print</span> <span class="string">"iv: "</span>.bin2hex($IV).<span class="string">"&lt;br&gt;"</span>;</span><br><span class="line"><span class="keyword">print</span> <span class="string">"c: "</span>.bin2hex($C).<span class="string">"&lt;br&gt;"</span>;	<span class="comment">//可能存在不可显示的字符，加个base64的编码</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(<span class="keyword">isset</span>($_GET[<span class="string">'s'</span>]) &amp;&amp; <span class="keyword">isset</span>($_GET[<span class="string">'iv'</span>]))&#123;</span><br><span class="line">	$s = hex2bin($_GET[<span class="string">'s'</span>]);</span><br><span class="line">	$iv = hex2bin($_GET[<span class="string">'iv'</span>]);</span><br><span class="line">	<span class="keyword">if</span>(($n = openssl_decrypt($s, $type, $Key, OPENSSL_RAW_DATA, $iv)) !== <span class="keyword">false</span>)&#123;		<span class="comment">//解密失败会返回false</span></span><br><span class="line">		<span class="comment">//bit flipping attack</span></span><br><span class="line">		<span class="keyword">echo</span> $n;</span><br><span class="line">		<span class="keyword">if</span>($n === <span class="string">"admin"</span>)&#123;</span><br><span class="line">			<span class="keyword">print</span> <span class="string">"well done!"</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		<span class="comment">//满足padding oracle attack前提条件2</span></span><br><span class="line">		<span class="keyword">die</span>(<span class="string">"Fail!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<p>脚本：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line">url = <span class="string">'http://192.168.248.1/test/demo.php'</span></span><br><span class="line">N = <span class="number">16</span></span><br><span class="line">l = [<span class="number">0</span>] * N</span><br><span class="line">iv = <span class="string">'74686973697674686973697674686973'</span>.decode(<span class="string">'hex'</span>)</span><br><span class="line">tmp_iv = <span class="string">''</span></span><br><span class="line">out = [<span class="number">0</span>] * N</span><br><span class="line">s = <span class="string">''</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, N+<span class="number">1</span>):</span><br><span class="line">	<span class="keyword">for</span> c <span class="keyword">in</span> range(<span class="number">0</span>,<span class="number">256</span>):</span><br><span class="line">		l[N-i] = c</span><br><span class="line">		tmp_iv = <span class="string">''</span></span><br><span class="line">		<span class="keyword">for</span> m <span class="keyword">in</span> l:</span><br><span class="line">			tmp_iv += chr(m)</span><br><span class="line">		<span class="keyword">print</span> tmp_iv.encode(<span class="string">'hex'</span>)</span><br><span class="line">		payload = <span class="string">"?s=e211ffa0baa91627a5827f3867a0cff1&amp;iv="</span> + tmp_iv.encode(<span class="string">'hex'</span>)</span><br><span class="line">		<span class="comment">#print payload</span></span><br><span class="line">		data = requests.get(url+payload).content</span><br><span class="line">		<span class="keyword">if</span> <span class="string">'Fail!'</span> <span class="keyword">not</span> <span class="keyword">in</span> data:</span><br><span class="line">			out[N-i] = c ^ i</span><br><span class="line">			<span class="keyword">for</span> y <span class="keyword">in</span> range(i):</span><br><span class="line">				l[N-y<span class="number">-1</span>] = out[N-y<span class="number">-1</span>] ^ (i+<span class="number">1</span>)</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(N):</span><br><span class="line">	out[i] = out[i] ^ ord(iv[i])</span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> out:</span><br><span class="line">	s += chr(c)</span><br><span class="line"><span class="keyword">print</span> s</span><br></pre></td></tr></table></figure>
+<p>python有一个关于此方式利用的库，<a href="https://github.com/mwielgoszewski/python-paddingoracle" target="_blank" rel="noopener">项目地址</a></p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a href="http://k1n9.me/2017/03/16/attack-in-cbc/" target="_blank" rel="noopener">http://k1n9.me/2017/03/16/attack-in-cbc/</a></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#CBC加密模式"><span class="toc-number">1.</span> <span class="toc-text">CBC加密模式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#字节翻转攻击"><span class="toc-number">1.1.</span> <span class="toc-text">字节翻转攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#概述"><span class="toc-number">1.1.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详解"><span class="toc-number">1.1.2.</span> <span class="toc-text">详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CTF实例"><span class="toc-number">1.1.3.</span> <span class="toc-text">CTF实例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Padding-Oracle-Attack"><span class="toc-number">1.2.</span> <span class="toc-text">Padding Oracle Attack</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#概述-1"><span class="toc-number">1.2.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详解-1"><span class="toc-number">1.2.2.</span> <span class="toc-text">详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实例"><span class="toc-number">1.2.3.</span> <span class="toc-text">实例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">1.2.4.</span> <span class="toc-text">参考</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&text=分组密码CBC加密缺陷"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&is_video=false&description=分组密码CBC加密缺陷"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=分组密码CBC加密缺陷&body=Check out this article: http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&title=分组密码CBC加密缺陷"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/05/15/分组密码CBC加密缺陷/&name=分组密码CBC加密缺陷&description=&lt;p&gt;关于密码学的种种漏洞以及利用网上也有不少，但是比较零散，有关介绍比较局限，导致一些东西晦涩难懂不易理解，这里是一个有关于CBC分组加密的一个讲解&lt;/p&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+

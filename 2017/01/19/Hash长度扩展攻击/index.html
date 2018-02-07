@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。">
+<meta name="keywords" content="密码学">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hash长度扩展攻击">
+<meta property="og:url" content="http://blog.leej.me/2017/01/19/Hash长度扩展攻击/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://blog.leej.me/images/20140606204046187.jpg">
+<meta property="og:updated_time" content="2018-02-07T04:11:15.560Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hash长度扩展攻击">
+<meta name="twitter:description" content="Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。">
+<meta name="twitter:image" content="http://blog.leej.me/images/20140606204046187.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Hash长度扩展攻击</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2017/01/19/Pthon学习之教务处的登录，以及安全思考/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&text=Hash长度扩展攻击"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&is_video=false&description=Hash长度扩展攻击"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Hash长度扩展攻击&body=Check out this article: http://blog.leej.me/2017/01/19/Hash长度扩展攻击/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&name=Hash长度扩展攻击&description=&lt;p&gt;Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。&lt;br&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Hash长度扩展攻击"><span class="toc-number">1.</span> <span class="toc-text">Hash长度扩展攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引子"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">引子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MD5算法"><span class="toc-number">1.0.0.2.</span> <span class="toc-text">MD5算法</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#举个例子"><span class="toc-number">1.0.0.2.1.</span> <span class="toc-text">举个例子</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#问题来了"><span class="toc-number">1.0.0.3.</span> <span class="toc-text">问题来了</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#首先正向计算一遍"><span class="toc-number">1.0.0.3.1.</span> <span class="toc-text">首先正向计算一遍</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#这时候我们按照给定条件来计算一遍"><span class="toc-number">1.0.0.3.2.</span> <span class="toc-text">这时候我们按照给定条件来计算一遍</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Hash长度扩展攻击
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-01-18T19:22:18.000Z" itemprop="datePublished">2017-01-19</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/密码学/">密码学</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。<br><a id="more"></a></p>
+<h1 id="Hash长度扩展攻击"><a href="#Hash长度扩展攻击" class="headerlink" title="Hash长度扩展攻击"></a>Hash长度扩展攻击</h1><h4 id="引子"><a href="#引子" class="headerlink" title="引子"></a>引子</h4><p>无意中碰到一道题，大概代码是这样的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">$flag = &quot;XXXXXXXXXXXXXXXXXXXXXXX&quot;;</span><br><span class="line">$secret = &quot;XXXXXXXXXXXXXXX&quot;; // This secret is 15 characters long for security!</span><br><span class="line"></span><br><span class="line">$username = $_POST[&quot;username&quot;];</span><br><span class="line">$password = $_POST[&quot;password&quot;];</span><br><span class="line"></span><br><span class="line">if (!empty($_COOKIE[&quot;getmein&quot;])) &#123;</span><br><span class="line">    if (urldecode($username) === &quot;admin&quot; &amp;&amp; urldecode($password) != &quot;admin&quot;) &#123;</span><br><span class="line">        if ($COOKIE[&quot;getmein&quot;] === md5($secret . urldecode($username . $password))) &#123;</span><br><span class="line">            echo &quot;Congratulations! You are a registered user.\n&quot;;</span><br><span class="line">            die (&quot;The flag is &quot;. $flag);</span><br><span class="line">        &#125;</span><br><span class="line">        else &#123;</span><br><span class="line">            die (&quot;Your cookies don&apos;t match up! STOP HACKING THIS SITE.&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    else &#123;</span><br><span class="line">        die (&quot;You are not an admin! LEAVE.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">setcookie(&quot;sample-hash&quot;, md5($secret . urldecode(&quot;admin&quot; . &quot;admin&quot;)), time() + (60 * 60 * 24 * 7));</span><br><span class="line"></span><br><span class="line">if (empty($_COOKIE[&quot;source&quot;])) &#123;</span><br><span class="line">    setcookie(&quot;source&quot;, 0, time() + (60 * 60 * 24 * 7));</span><br><span class="line">&#125;</span><br><span class="line">else &#123;</span><br><span class="line">    if ($_COOKIE[&quot;source&quot;] != 0) &#123;</span><br><span class="line">        echo &quot;&quot;; // This source code is outputted here</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个核心的判断在第二个if的判断</p>
+<p><code>if ($COOKIE[&quot;getmein&quot;] === md5($secret . urldecode($username . $password)))</code></p>
+<p>也就是需要构造getmein的cookie和他那串字符相同就可以，但是问题是这个$secret的变量我们根本不知道啊</p>
+<p>网上找了些关于MD5的资料，发现MD5是存在Hash长度扩展攻击的</p>
+<h4 id="MD5算法"><a href="#MD5算法" class="headerlink" title="MD5算法"></a>MD5算法</h4><p>MD5的算法具体比较复杂，不是一时半会可以看透的，但是从表面的一个加密过程来看就是类似下图<img src="\images\20140606204046187.jpg" alt="20140606204046187"></p>
+<p>首先是对加密的字符串进行填充，使之(二进制)补到448模512同余，即长度为512的倍数减64，最后的64位在补充为原来字符串的长度，这样刚好补满512位的倍数，之后再将这512位分组,进行复杂的运算,具体过程不阐述。需要知道的就是进行MD5运算必须要是512的整数倍，不是整数倍会将其补全，还有一个重点是他的计算过程是512位进行一次运算，也就是如果消息长度小于512就只需要计算一次，大于512小于1024是计算两次,以此类推。</p>
+<p>在MD5中有四个32位的被称作链接变量的整数参数，是如下设置(这个ABCD是初始的固定的值)：</p>
+<p>A=0x67452301，</p>
+<p>B=0xefcdab89，</p>
+<p>C=0x98badcfe，</p>
+<p>D=0x10325476。</p>
+<p>之后有四个非线性函数，将字符串和那四个链接变量经过一系列的复杂运算，算出一组新的A,B,C,D的值，如果消息小于512，也就是只需要计算一次，这时候将新的ABCD的值按ABCD的顺序级联，然后输出，就是MD5的值，如果消息大于512的话，就用第一次算的MD5的值进行后半部分的运算，以此类推。</p>
+<h5 id="举个例子"><a href="#举个例子" class="headerlink" title="举个例子"></a>举个例子</h5><p>比如计算字符串“test”</p>
+<p>十六进制<code>0x74657374</code></p>
+<p>二进制<code>0b1110100011001010111001101110100</code></p>
+<p>这里与448模512不同余，补位后的数据如下</p>
+<p>十六进制</p>
+<p><code>0x74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000</code></p>
+<p>二进制</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0b1110100011001010111001101110100100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000</span><br></pre></td></tr></table></figure>
+<p>将补位后的数据进行一次复杂的运算，计算出</p>
+<p>A=0xcd6b8f09</p>
+<p>B=0x73d32146</p>
+<p>C=0x834edeca</p>
+<p>D=0xf6b42726</p>
+<p>数据小于512位，所以将ABCD通过小端规则转换就是MD5值：098f6bcd4621d373cade4e832627b4f6</p>
+<p>如果我输入的数据不是test而是一串很长的字符，换算出来大于512小于1024，就需要计算两次，第一次先计算前512位的ABCD的值，算出来后再用这个ABCD去计算后面512位的的ABCD的值，最后算出来的ABCD经过拼接就是这串字符的MD5了</p>
+<h4 id="问题来了"><a href="#问题来了" class="headerlink" title="问题来了"></a><strong>问题来了</strong></h4><p>如果这么一个情况，由两个字符串组成一个字符串(\$str=\$a+\$b)，第一个字符串(\$a)我不知道也不可控，只可控第二个字符串(\$b)，同时知道第一个字符串(\$a)的MD5值和长度，这时候我将第二个字符串精心构造一下，便可以算出合成的字符串\$str的MD5的值</p>
+<h5 id="首先正向计算一遍"><a href="#首先正向计算一遍" class="headerlink" title="首先正向计算一遍"></a>首先正向计算一遍</h5><p>假如第一个字符串\$a=“test”,为了方便转为十六进制0x74657374</p>
+<p>我构造第二个字符串首先手动将$str补成一个标准的可以直接计算的512位</p>
+<p>\$str=0x74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000</p>
+<p>这样子，这时候再在后面追加一个0x746573748</p>
+<p>\$str=0x74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000746573748</p>
+<p>这时候再将$str大于512位，程序会先将这串数据补为1024位，补充完如下</p>
+<p>\$str=0x7465737480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000074657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002002000000000000</p>
+<p>这时将$str分为两部分</p>
+<p>74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000</p>
+<p>和</p>
+<p>74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002002000000000000</p>
+<p>这时候程序计算前一部分的ABCD的值，由于和之前算的test的数值是相同的所以</p>
+<p>A=0xcd6b8f09</p>
+<p>B=0x73d32146</p>
+<p>C=0x834edeca</p>
+<p>D=0xf6b42726</p>
+<p>到了第二部分，第二部分的计算是用的第一部分的ABCD去计算，计算新的ABCD如下</p>
+<p>A=0x226359e5</p>
+<p>b=0x99df12eb</p>
+<p>C=0x6853f59e</p>
+<p>D=0xf5406385</p>
+<p>最后算出来的MD5是e5596322eb12df999ef55368856340f5</p>
+<h5 id="这时候我们按照给定条件来计算一遍"><a href="#这时候我们按照给定条件来计算一遍" class="headerlink" title="这时候我们按照给定条件来计算一遍"></a>这时候我们按照给定条件来计算一遍</h5><p>我们知道的条件</p>
+<p>1.$a的MD5(098f6bcd4621d373cade4e832627b4f6)</p>
+<p>2.$a的长度=4</p>
+<p>3.$b我们可以任意控制</p>
+<p>由1我们可以逆推算出其ABCD的值</p>
+<p>A=0xcd6b8f09</p>
+<p>B=0x73d32146</p>
+<p>C=0x834edeca</p>
+<p>D=0xf6b42726</p>
+<p>我们构造$b=’\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\x00\x00\x00\x00\x00\x00\x00’+’test’</p>
+<p>此时$str如下，由于不知道\$a，我们假设\$a=”aaaa”</p>
+<p>$str=’aaaa’+’\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\x00\x00\x00\x00\x00\x00\x00’+’test’</p>
+<p>好了我们脑补一下程序计算str的过程</p>
+<p>1.由于大于512位，先补全为1024位，</p>
+<p>2.将其分为两部分</p>
+<p>3.计算第一部分的ABCD的值</p>
+<p>4.再用第一部分算出来的ABCD拿来算第二部分的值。</p>
+<p>这里由于第一部分的ABCD我们可以逆推出来，我们可以直接跳过前三部分直接进行第四部分的计算，只需要将标准的MD5的源码里面的初始的ABCD的值改为逆推出来的那个值</p>
+<p>我们用假的初始的ABCD计算一下</p>
+<p>0x74657374800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002002000000000000</p>
+<p>的MD5，发现是e5596322eb12df999ef55368856340f5，和上面正向计算出来的一样！</p>
+<p>下面贴出来我用的算MD5的代码，以及测试文件</p>
+<p>my_md5.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="comment"># @Author：DshtAnger</span></span><br><span class="line"><span class="comment"># theory reference:</span></span><br><span class="line"><span class="comment">#   blog：</span></span><br><span class="line"><span class="comment">#       http://blog.csdn.net/adidala/article/details/28677393</span></span><br><span class="line"><span class="comment">#       http://blog.csdn.net/forgotaboutgirl/article/details/7258109</span></span><br><span class="line"><span class="comment">#       http://blog.sina.com.cn/s/blog_6fe0eb1901014cpl.html</span></span><br><span class="line"><span class="comment">#   RFC1321：</span></span><br><span class="line"><span class="comment">#       https://www.rfc-editor.org/rfc/pdfrfc/rfc1321.txt.pdf</span></span><br><span class="line"><span class="comment">##############################################################################</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">genMsgLengthDescriptor</span><span class="params">(msg_bitsLenth)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    ---args:</span></span><br><span class="line"><span class="string">            msg_bitsLenth : the bits length of raw message</span></span><br><span class="line"><span class="string">    --return:</span></span><br><span class="line"><span class="string">            16 hex-encoded string , i.e.64bits,8bytes which used to describe the bits length of raw message added after padding</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    <span class="keyword">return</span> __import__(<span class="string">"struct"</span>).pack(<span class="string">"&gt;Q"</span>,msg_bitsLenth).encode(<span class="string">"hex"</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">reverse_hex_8bytes</span><span class="params">(hex_str)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    --args:</span></span><br><span class="line"><span class="string">            hex_str: a hex-encoded string with length 16 , i.e.8bytes</span></span><br><span class="line"><span class="string">    --return:</span></span><br><span class="line"><span class="string">            transform raw message descriptor to little-endian</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    hex_str = <span class="string">"%016x"</span>%int(hex_str,<span class="number">16</span>)</span><br><span class="line">    <span class="keyword">assert</span> len(hex_str)==<span class="number">16</span></span><br><span class="line">    <span class="keyword">return</span> __import__(<span class="string">"struct"</span>).pack(<span class="string">"&lt;Q"</span>,int(hex_str,<span class="number">16</span>)).encode(<span class="string">"hex"</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">reverse_hex_4bytes</span><span class="params">(hex_str)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    --args:</span></span><br><span class="line"><span class="string">            hex_str: a hex-encoded string with length 8 , i.e.4bytes</span></span><br><span class="line"><span class="string">    --return:</span></span><br><span class="line"><span class="string">            transform 4 bytes message block to little-endian</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    hex_str = <span class="string">"%08x"</span>%int(hex_str,<span class="number">16</span>)</span><br><span class="line">    <span class="keyword">assert</span> len(hex_str)==<span class="number">8</span></span><br><span class="line">    <span class="keyword">return</span> __import__(<span class="string">"struct"</span>).pack(<span class="string">"&lt;L"</span>,int(hex_str,<span class="number">16</span>)).encode(<span class="string">"hex"</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">deal_rawInputMsg</span><span class="params">(input_msg)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    --args:</span></span><br><span class="line"><span class="string">            input_msg : inputed a ascii-encoded string</span></span><br><span class="line"><span class="string">    --return:</span></span><br><span class="line"><span class="string">            a hex-encoded string which can be inputed to mathematical transformation function.</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    ascii_list = [x.encode(<span class="string">"hex"</span>) <span class="keyword">for</span> x <span class="keyword">in</span> input_msg]</span><br><span class="line">    length_msg_bytes = len(ascii_list)</span><br><span class="line">    length_msg_bits = len(ascii_list)*<span class="number">8</span></span><br><span class="line">    <span class="comment">#padding</span></span><br><span class="line">    ascii_list.append(<span class="string">'80'</span>)</span><br><span class="line">    <span class="keyword">while</span> (len(ascii_list)*<span class="number">8</span>+<span class="number">64</span>)%<span class="number">512</span> != <span class="number">0</span>:</span><br><span class="line">        ascii_list.append(<span class="string">'00'</span>)</span><br><span class="line">    <span class="comment">#add Descriptor</span></span><br><span class="line">    ascii_list.append(reverse_hex_8bytes(genMsgLengthDescriptor(length_msg_bits)))</span><br><span class="line">    <span class="keyword">return</span> <span class="string">""</span>.join(ascii_list)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">getM16</span><span class="params">(hex_str,operatingBlockNum)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    --args:</span></span><br><span class="line"><span class="string">            hex_str : a hex-encoded string with length in integral multiple of 512bits</span></span><br><span class="line"><span class="string">            operatingBlockNum : message block number which is being operated , greater than 1</span></span><br><span class="line"><span class="string">    --return:</span></span><br><span class="line"><span class="string">            M : result of splited 64bytes into 4*16 message blocks with little-endian</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    M = [int(reverse_hex_4bytes(hex_str[i:(i+<span class="number">8</span>)]),<span class="number">16</span>) <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">128</span>*(operatingBlockNum<span class="number">-1</span>),<span class="number">128</span>*operatingBlockNum,<span class="number">8</span>)]</span><br><span class="line">    <span class="keyword">return</span> M</span><br><span class="line"></span><br><span class="line"><span class="comment">#定义函数，用来产生常数T[i]，常数有可能超过32位，同样需要&amp;0xffffffff操作。注意返回的是十进制的数</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">T</span><span class="params">(i)</span>:</span></span><br><span class="line">    result = (int(<span class="number">4294967296</span>*abs(__import__(<span class="string">"math"</span>).sin(i))))&amp;<span class="number">0xffffffff</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line"><span class="comment">#定义每轮中用到的函数</span></span><br><span class="line"><span class="comment">#RL为循环左移，注意左移之后可能会超过32位，所以要和0xffffffff做与运算，确保结果为32位</span></span><br><span class="line">F = <span class="keyword">lambda</span> x,y,z:((x&amp;y)|((~x)&amp;z))</span><br><span class="line">G = <span class="keyword">lambda</span> x,y,z:((x&amp;z)|(y&amp;(~z)))</span><br><span class="line">H = <span class="keyword">lambda</span> x,y,z:(x^y^z)</span><br><span class="line">I = <span class="keyword">lambda</span> x,y,z:(y^(x|(~z)))</span><br><span class="line">RL = L = <span class="keyword">lambda</span> x,n:(((x&lt;&lt;n)|(x&gt;&gt;(<span class="number">32</span>-n)))&amp;(<span class="number">0xffffffff</span>))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">FF</span><span class="params">(a, b, c, d, x, s, ac)</span>:</span></span><br><span class="line">    a = (a+F ((b), (c), (d)) + (x) + (ac)&amp;<span class="number">0xffffffff</span>)&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = RL ((a), (s))&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = (a+b)&amp;<span class="number">0xffffffff</span></span><br><span class="line">    <span class="keyword">return</span> a</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">GG</span><span class="params">(a, b, c, d, x, s, ac)</span>:</span></span><br><span class="line">    a = (a+G ((b), (c), (d)) + (x) + (ac)&amp;<span class="number">0xffffffff</span>)&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = RL ((a), (s))&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = (a+b)&amp;<span class="number">0xffffffff</span></span><br><span class="line">    <span class="keyword">return</span> a</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">HH</span><span class="params">(a, b, c, d, x, s, ac)</span>:</span></span><br><span class="line">    a = (a+H ((b), (c), (d)) + (x) + (ac)&amp;<span class="number">0xffffffff</span>)&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = RL ((a), (s))&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = (a+b)&amp;<span class="number">0xffffffff</span></span><br><span class="line">    <span class="keyword">return</span> a</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">II</span><span class="params">(a, b, c, d, x, s, ac)</span>:</span></span><br><span class="line">    a = (a+I ((b), (c), (d)) + (x) + (ac)&amp;<span class="number">0xffffffff</span>)&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = RL ((a), (s))&amp;<span class="number">0xffffffff</span>;</span><br><span class="line">    a = (a+b)&amp;<span class="number">0xffffffff</span></span><br><span class="line">    <span class="keyword">return</span> a</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">show_md5</span><span class="params">(A,B,C,D)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">""</span>.join( [  <span class="string">""</span>.join(__import__(<span class="string">"re"</span>).findall(<span class="string">r".."</span>,<span class="string">"%08x"</span>%i)[::<span class="number">-1</span>]) <span class="keyword">for</span> i <span class="keyword">in</span> (A,B,C,D)  ]  )</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_md5</span><span class="params">(A=<span class="number">0x67452301</span>,B=<span class="number">0xefcdab89</span>,C=<span class="number">0x98badcfe</span>,D=<span class="number">0x10325476</span>,readyMsg=<span class="string">""</span>)</span>:</span></span><br><span class="line"></span><br><span class="line">    a = A</span><br><span class="line">    b = B</span><br><span class="line">    c = C</span><br><span class="line">    d = D</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">0</span>,len(readyMsg)/<span class="number">128</span>):</span><br><span class="line">        M = getM16(readyMsg,i+<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">16</span>):</span><br><span class="line">            <span class="keyword">exec</span> <span class="string">"M"</span>+str(i)+<span class="string">"=M["</span>+str(i)+<span class="string">"]"</span></span><br><span class="line">        <span class="comment">#First round</span></span><br><span class="line">        a=FF(a,b,c,d,M0,<span class="number">7</span>,<span class="number">0xd76aa478L</span>)</span><br><span class="line">        d=FF(d,a,b,c,M1,<span class="number">12</span>,<span class="number">0xe8c7b756L</span>)</span><br><span class="line">        c=FF(c,d,a,b,M2,<span class="number">17</span>,<span class="number">0x242070dbL</span>)</span><br><span class="line">        b=FF(b,c,d,a,M3,<span class="number">22</span>,<span class="number">0xc1bdceeeL</span>)</span><br><span class="line">        a=FF(a,b,c,d,M4,<span class="number">7</span>,<span class="number">0xf57c0fafL</span>)</span><br><span class="line">        d=FF(d,a,b,c,M5,<span class="number">12</span>,<span class="number">0x4787c62aL</span>)</span><br><span class="line">        c=FF(c,d,a,b,M6,<span class="number">17</span>,<span class="number">0xa8304613L</span>)</span><br><span class="line">        b=FF(b,c,d,a,M7,<span class="number">22</span>,<span class="number">0xfd469501L</span>)</span><br><span class="line">        a=FF(a,b,c,d,M8,<span class="number">7</span>,<span class="number">0x698098d8L</span>)</span><br><span class="line">        d=FF(d,a,b,c,M9,<span class="number">12</span>,<span class="number">0x8b44f7afL</span>)</span><br><span class="line">        c=FF(c,d,a,b,M10,<span class="number">17</span>,<span class="number">0xffff5bb1L</span>)</span><br><span class="line">        b=FF(b,c,d,a,M11,<span class="number">22</span>,<span class="number">0x895cd7beL</span>)</span><br><span class="line">        a=FF(a,b,c,d,M12,<span class="number">7</span>,<span class="number">0x6b901122L</span>)</span><br><span class="line">        d=FF(d,a,b,c,M13,<span class="number">12</span>,<span class="number">0xfd987193L</span>)</span><br><span class="line">        c=FF(c,d,a,b,M14,<span class="number">17</span>,<span class="number">0xa679438eL</span>)</span><br><span class="line">        b=FF(b,c,d,a,M15,<span class="number">22</span>,<span class="number">0x49b40821L</span>)</span><br><span class="line">        <span class="comment">#Second round</span></span><br><span class="line">        a=GG(a,b,c,d,M1,<span class="number">5</span>,<span class="number">0xf61e2562L</span>)</span><br><span class="line">        d=GG(d,a,b,c,M6,<span class="number">9</span>,<span class="number">0xc040b340L</span>)</span><br><span class="line">        c=GG(c,d,a,b,M11,<span class="number">14</span>,<span class="number">0x265e5a51L</span>)</span><br><span class="line">        b=GG(b,c,d,a,M0,<span class="number">20</span>,<span class="number">0xe9b6c7aaL</span>)</span><br><span class="line">        a=GG(a,b,c,d,M5,<span class="number">5</span>,<span class="number">0xd62f105dL</span>)</span><br><span class="line">        d=GG(d,a,b,c,M10,<span class="number">9</span>,<span class="number">0x02441453L</span>)</span><br><span class="line">        c=GG(c,d,a,b,M15,<span class="number">14</span>,<span class="number">0xd8a1e681L</span>)</span><br><span class="line">        b=GG(b,c,d,a,M4,<span class="number">20</span>,<span class="number">0xe7d3fbc8L</span>)</span><br><span class="line">        a=GG(a,b,c,d,M9,<span class="number">5</span>,<span class="number">0x21e1cde6L</span>)</span><br><span class="line">        d=GG(d,a,b,c,M14,<span class="number">9</span>,<span class="number">0xc33707d6L</span>)</span><br><span class="line">        c=GG(c,d,a,b,M3,<span class="number">14</span>,<span class="number">0xf4d50d87L</span>)</span><br><span class="line">        b=GG(b,c,d,a,M8,<span class="number">20</span>,<span class="number">0x455a14edL</span>)</span><br><span class="line">        a=GG(a,b,c,d,M13,<span class="number">5</span>,<span class="number">0xa9e3e905L</span>)</span><br><span class="line">        d=GG(d,a,b,c,M2,<span class="number">9</span>,<span class="number">0xfcefa3f8L</span>)</span><br><span class="line">        c=GG(c,d,a,b,M7,<span class="number">14</span>,<span class="number">0x676f02d9L</span>)</span><br><span class="line">        b=GG(b,c,d,a,M12,<span class="number">20</span>,<span class="number">0x8d2a4c8aL</span>)</span><br><span class="line">        <span class="comment">#Third round</span></span><br><span class="line">        a=HH(a,b,c,d,M5,<span class="number">4</span>,<span class="number">0xfffa3942L</span>)</span><br><span class="line">        d=HH(d,a,b,c,M8,<span class="number">11</span>,<span class="number">0x8771f681L</span>)</span><br><span class="line">        c=HH(c,d,a,b,M11,<span class="number">16</span>,<span class="number">0x6d9d6122L</span>)</span><br><span class="line">        b=HH(b,c,d,a,M14,<span class="number">23</span>,<span class="number">0xfde5380c</span>)</span><br><span class="line">        a=HH(a,b,c,d,M1,<span class="number">4</span>,<span class="number">0xa4beea44L</span>)</span><br><span class="line">        d=HH(d,a,b,c,M4,<span class="number">11</span>,<span class="number">0x4bdecfa9L</span>)</span><br><span class="line">        c=HH(c,d,a,b,M7,<span class="number">16</span>,<span class="number">0xf6bb4b60L</span>)</span><br><span class="line">        b=HH(b,c,d,a,M10,<span class="number">23</span>,<span class="number">0xbebfbc70L</span>)</span><br><span class="line">        a=HH(a,b,c,d,M13,<span class="number">4</span>,<span class="number">0x289b7ec6L</span>)</span><br><span class="line">        d=HH(d,a,b,c,M0,<span class="number">11</span>,<span class="number">0xeaa127faL</span>)</span><br><span class="line">        c=HH(c,d,a,b,M3,<span class="number">16</span>,<span class="number">0xd4ef3085L</span>)</span><br><span class="line">        b=HH(b,c,d,a,M6,<span class="number">23</span>,<span class="number">0x04881d05L</span>)</span><br><span class="line">        a=HH(a,b,c,d,M9,<span class="number">4</span>,<span class="number">0xd9d4d039L</span>)</span><br><span class="line">        d=HH(d,a,b,c,M12,<span class="number">11</span>,<span class="number">0xe6db99e5L</span>)</span><br><span class="line">        c=HH(c,d,a,b,M15,<span class="number">16</span>,<span class="number">0x1fa27cf8L</span>)</span><br><span class="line">        b=HH(b,c,d,a,M2,<span class="number">23</span>,<span class="number">0xc4ac5665L</span>)</span><br><span class="line">        <span class="comment">#Fourth round</span></span><br><span class="line">        a=II(a,b,c,d,M0,<span class="number">6</span>,<span class="number">0xf4292244L</span>)</span><br><span class="line">        d=II(d,a,b,c,M7,<span class="number">10</span>,<span class="number">0x432aff97L</span>)</span><br><span class="line">        c=II(c,d,a,b,M14,<span class="number">15</span>,<span class="number">0xab9423a7L</span>)</span><br><span class="line">        b=II(b,c,d,a,M5,<span class="number">21</span>,<span class="number">0xfc93a039L</span>)</span><br><span class="line">        a=II(a,b,c,d,M12,<span class="number">6</span>,<span class="number">0x655b59c3L</span>)</span><br><span class="line">        d=II(d,a,b,c,M3,<span class="number">10</span>,<span class="number">0x8f0ccc92L</span>)</span><br><span class="line">        c=II(c,d,a,b,M10,<span class="number">15</span>,<span class="number">0xffeff47dL</span>)</span><br><span class="line">        b=II(b,c,d,a,M1,<span class="number">21</span>,<span class="number">0x85845dd1L</span>)</span><br><span class="line">        a=II(a,b,c,d,M8,<span class="number">6</span>,<span class="number">0x6fa87e4fL</span>)</span><br><span class="line">        d=II(d,a,b,c,M15,<span class="number">10</span>,<span class="number">0xfe2ce6e0L</span>)</span><br><span class="line">        c=II(c,d,a,b,M6,<span class="number">15</span>,<span class="number">0xa3014314L</span>)</span><br><span class="line">        b=II(b,c,d,a,M13,<span class="number">21</span>,<span class="number">0x4e0811a1L</span>)</span><br><span class="line">        a=II(a,b,c,d,M4,<span class="number">6</span>,<span class="number">0xf7537e82L</span>)</span><br><span class="line">        d=II(d,a,b,c,M11,<span class="number">10</span>,<span class="number">0xbd3af235L</span>)</span><br><span class="line">        c=II(c,d,a,b,M2,<span class="number">15</span>,<span class="number">0x2ad7d2bbL</span>)</span><br><span class="line">        b=II(b,c,d,a,M9,<span class="number">21</span>,<span class="number">0xeb86d391L</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        A += a</span><br><span class="line">        B += b</span><br><span class="line">        C += c</span><br><span class="line">        D += d</span><br><span class="line"></span><br><span class="line">        A = A&amp;<span class="number">0xffffffff</span></span><br><span class="line">        B = B&amp;<span class="number">0xffffffff</span></span><br><span class="line">        C = C&amp;<span class="number">0xffffffff</span></span><br><span class="line">        D = D&amp;<span class="number">0xffffffff</span></span><br><span class="line"></span><br><span class="line">        a = A</span><br><span class="line">        b = B</span><br><span class="line">        c = C</span><br><span class="line">        d = D</span><br><span class="line">        <span class="keyword">print</span> <span class="string">"%x,%x,%x,%x"</span>%(a,b,c,d)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> show_md5(a,b,c,d)</span><br></pre></td></tr></table></figure>
+<p>test.py</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> my_md5</span><br><span class="line"></span><br><span class="line">samplehash=<span class="string">"571580b26c65f306376d4f64e53cb5c7"</span></span><br><span class="line"></span><br><span class="line">s1=<span class="number">0xcd6b8f09</span></span><br><span class="line">s2=<span class="number">0x73d32146</span></span><br><span class="line">s3=<span class="number">0x834edeca</span></span><br><span class="line">s4=<span class="number">0xf6b42726</span></span><br><span class="line">secret = <span class="string">"a"</span>*<span class="number">4</span></span><br><span class="line"></span><br><span class="line">test=secret+<span class="string">'\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\x00\x00\x00\x00\x00\x00\x00'</span>+<span class="string">'test'</span></span><br><span class="line">s = my_md5.deal_rawInputMsg(test)</span><br><span class="line">r = my_md5.deal_rawInputMsg(secret_admin)</span><br><span class="line">inp = s[len(r)/<span class="number">2</span>:]</span><br><span class="line"><span class="keyword">print</span> test+<span class="string">'\n'</span></span><br><span class="line"><span class="keyword">print</span> <span class="string">'----------------------------------------------------------'</span></span><br><span class="line"><span class="keyword">print</span> s</span><br><span class="line"><span class="keyword">print</span> <span class="string">'----------------------------------------------------------'</span></span><br><span class="line"><span class="keyword">print</span> inp</span><br><span class="line"><span class="keyword">print</span> <span class="string">'----------------------------------------------------------'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> <span class="string">"md5:"</span>+my_md5.run_md5(s1,s2,s3,s4,inp)</span><br></pre></td></tr></table></figure>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Hash长度扩展攻击"><span class="toc-number">1.</span> <span class="toc-text">Hash长度扩展攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引子"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">引子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MD5算法"><span class="toc-number">1.0.0.2.</span> <span class="toc-text">MD5算法</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#举个例子"><span class="toc-number">1.0.0.2.1.</span> <span class="toc-text">举个例子</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#问题来了"><span class="toc-number">1.0.0.3.</span> <span class="toc-text">问题来了</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#首先正向计算一遍"><span class="toc-number">1.0.0.3.1.</span> <span class="toc-text">首先正向计算一遍</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#这时候我们按照给定条件来计算一遍"><span class="toc-number">1.0.0.3.2.</span> <span class="toc-text">这时候我们按照给定条件来计算一遍</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&text=Hash长度扩展攻击"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&is_video=false&description=Hash长度扩展攻击"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Hash长度扩展攻击&body=Check out this article: http://blog.leej.me/2017/01/19/Hash长度扩展攻击/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&title=Hash长度扩展攻击"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/01/19/Hash长度扩展攻击/&name=Hash长度扩展攻击&description=&lt;p&gt;Hash长度扩展攻击，是一个比较有意思的攻击方式，服务端给一段明文加盐后hash，可以利用已知HASH值来预测特定字符串的Hash值。&lt;br&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+

