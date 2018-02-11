@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="linux下使用gdb进行php调试调试了一些php的漏洞，记录一下大概的过程 安装编译php1sudo apt-get install -y autoconf libtool re2c libxml2-dev openssl libcurl4-openssl-dev  libbz2-dev libjpeg-dev libpng12-dev libfreetype6-dev libldap2-de">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux下使用gdb对php源码调试">
+<meta property="og:url" content="http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/index.html">
+<meta property="og:site_name" content="Leej">
+<meta property="og:description" content="linux下使用gdb进行php调试调试了一些php的漏洞，记录一下大概的过程 安装编译php1sudo apt-get install -y autoconf libtool re2c libxml2-dev openssl libcurl4-openssl-dev  libbz2-dev libjpeg-dev libpng12-dev libfreetype6-dev libldap2-de">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-02-11T09:59:38.441Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux下使用gdb对php源码调试">
+<meta name="twitter:description" content="linux下使用gdb进行php调试调试了一些php的漏洞，记录一下大概的过程 安装编译php1sudo apt-get install -y autoconf libtool re2c libxml2-dev openssl libcurl4-openssl-dev  libbz2-dev libjpeg-dev libpng12-dev libfreetype6-dev libldap2-de">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>linux下使用gdb对php源码调试</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2018/02/11/导出Chrome浏览器中保存的密码/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&text=linux下使用gdb对php源码调试"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&is_video=false&description=linux下使用gdb对php源码调试"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=linux下使用gdb对php源码调试&body=Check out this article: http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&name=linux下使用gdb对php源码调试&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#linux下使用gdb进行php调试"><span class="toc-number">1.</span> <span class="toc-text">linux下使用gdb进行php调试</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#安装编译php"><span class="toc-number">1.0.1.</span> <span class="toc-text">安装编译php</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#gdb的调试方法"><span class="toc-number">1.0.2.</span> <span class="toc-text">gdb的调试方法</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#确定上层php函数名在底层调用函数"><span class="toc-number">1.0.3.</span> <span class="toc-text">确定上层php函数名在底层调用函数</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#开始调试"><span class="toc-number">1.0.4.</span> <span class="toc-text">开始调试</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        linux下使用gdb对php源码调试
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Leej</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2018-02-11T09:59:08.000Z" itemprop="datePublished">2018-02-11</time>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="linux下使用gdb进行php调试"><a href="#linux下使用gdb进行php调试" class="headerlink" title="linux下使用gdb进行php调试"></a>linux下使用gdb进行php调试</h3><p>调试了一些php的漏洞，记录一下大概的过程</p>
+<h5 id="安装编译php"><a href="#安装编译php" class="headerlink" title="安装编译php"></a>安装编译php</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install -y autoconf libtool re2c libxml2-dev openssl libcurl4-openssl-dev  libbz2-dev libjpeg-dev libpng12-dev libfreetype6-dev libldap2-dev libmcrypt-dev   libmysqlclient-dev libxslt1-dev libxt-dev libpcre3-dev libxpm-dev libt1-dev libgmp-dev libpspell-dev librecode-dev libreadline6-dev bison libtidy-dev</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo ln -s /usr/lib/x86_64-linux-gnu/libldap.so /usr/lib/   </span><br><span class="line">sudo ln -s /usr/lib/x86_64-linux-gnu/liblber.so /usr/lib/   </span><br><span class="line">sudo ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">./buildconf  </span><br><span class="line">./configure --<span class="built_in">enable</span>-opcache --<span class="built_in">enable</span>-fpm --<span class="built_in">enable</span>-pdo --<span class="built_in">enable</span>-sockets --<span class="built_in">enable</span>-exif --<span class="built_in">enable</span>-soap --<span class="built_in">enable</span>-ftp --<span class="built_in">enable</span>-wddx --<span class="built_in">enable</span>-pcntl --<span class="built_in">enable</span>-soap --<span class="built_in">enable</span>-bcmath --<span class="built_in">enable</span>-mbstring --<span class="built_in">enable</span>-dba --<span class="built_in">enable</span>-gd-native-ttf --<span class="built_in">enable</span>-gd-jis-conv --<span class="built_in">enable</span>-zip --<span class="built_in">enable</span>-calendar --<span class="built_in">enable</span>-shmop --<span class="built_in">enable</span>-sysvmsg --<span class="built_in">enable</span>-sysvsem --<span class="built_in">enable</span>-sysvshm --with-mysqli --with-pdo-mysql --with-pdo-sqlite --with-iconv --with-gmp --with-pspell --with-gettext --with-xmlrpc --with-openssl --with-mhash --with-mcrypt --with-xsl --with-curl --with-pcre-regex --with-gd --with-jpeg-dir=/usr --with-png-dir=/usr --with-zlib-dir=/usr --with-xpm-dir=/usr --with-freetype-dir=/usr  --with-gettext=/usr --with-zlib=/usr --with-bz2=/usr --with-recode=/usr --with-ldap --with-pear --with-readline --with-fpm-user=bigric3 --with-fpm-group=bigric3</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make  </span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+<p>验证安装：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">leej@ubuntu:~$ php -v</span><br><span class="line">PHP <span class="number">7.0</span><span class="number">.0</span> (cli) (built: Jan <span class="number">29</span> <span class="number">2018</span> <span class="number">19</span>:<span class="number">58</span>:<span class="number">16</span>) ( NTS )</span><br><span class="line">Copyright (c) <span class="number">1997</span><span class="number">-2015</span> The PHP Group</span><br><span class="line">Zend Engine v3<span class="number">.0</span><span class="number">.0</span>, Copyright (c) <span class="number">1998</span><span class="number">-2015</span> Zend Technologies</span><br></pre></td></tr></table></figure>
+<h5 id="gdb的调试方法"><a href="#gdb的调试方法" class="headerlink" title="gdb的调试方法"></a>gdb的调试方法</h5><p>1.设置命令行参数：</p>
+<p>2.显示代码：list 简写l 可以指定行数（list 5,10）</p>
+<p>3.layout：框框圈起来看代码</p>
+<p>4.打印变量：print 简写p 加变量（print i）/info reg打印寄存器/</p>
+<p>5.设置断点：b 行数或函数名</p>
+<p>6.查看断点：info b</p>
+<p>7.删除断点：d 断点号（info中的num）</p>
+<p>8.运行：run 简写r</p>
+<p>9.单步调试step over：n(ext)</p>
+<p>10.单步调试step in：s(tep)</p>
+<p>11.运行到断点处：c(ontinue)</p>
+<p>具体参考：<a href="http://blog.csdn.net/huqinwei987/article/details/23548239" target="_blank" rel="noopener">参考一</a>，<a href="https://www.cnblogs.com/zlcxbb/p/6441356.html" target="_blank" rel="noopener">参考二</a> </p>
+<h5 id="确定上层php函数名在底层调用函数"><a href="#确定上层php函数名在底层调用函数" class="headerlink" title="确定上层php函数名在底层调用函数"></a>确定上层php函数名在底层调用函数</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">leej@ubuntu:~/php/php-7.0.0$ nm sapi/cli/php|grep imagecreatefromgif</span><br><span class="line">0000000001106fc0 d arginfo_imagecreatefromgif</span><br><span class="line">00000000005b50b0 t zif_imagecreatefromgif</span><br></pre></td></tr></table></figure>
+<h5 id="开始调试"><a href="#开始调试" class="headerlink" title="开始调试"></a>开始调试</h5><p>略…</p>
+<p>主要记录环境搭建，具体调试不同的cve，这部分自由发挥吧</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#linux下使用gdb进行php调试"><span class="toc-number">1.</span> <span class="toc-text">linux下使用gdb进行php调试</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#安装编译php"><span class="toc-number">1.0.1.</span> <span class="toc-text">安装编译php</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#gdb的调试方法"><span class="toc-number">1.0.2.</span> <span class="toc-text">gdb的调试方法</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#确定上层php函数名在底层调用函数"><span class="toc-number">1.0.3.</span> <span class="toc-text">确定上层php函数名在底层调用函数</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#开始调试"><span class="toc-number">1.0.4.</span> <span class="toc-text">开始调试</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&text=linux下使用gdb对php源码调试"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&is_video=false&description=linux下使用gdb对php源码调试"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=linux下使用gdb对php源码调试&body=Check out this article: http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&title=linux下使用gdb对php源码调试"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/02/11/linux下使用gdb对php源码调试/&name=linux下使用gdb对php源码调试&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 Leej
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/about/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/leejgod">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-86660611-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+
