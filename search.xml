@@ -860,6 +860,12 @@ url(&#39;http://1.2.3.4/&#39;);</code><br>或者加载背景<br><code>{}body {ba
   
     
     <entry>
+      <title><![CDATA[tags]]></title>
+      <url>/tags/index.html</url>
+      <content type="html"></content>
+    </entry>
+    
+    <entry>
       <title><![CDATA[Search]]></title>
       <url>/Search/index.html</url>
       <content type="html"></content>
@@ -872,12 +878,6 @@ url(&#39;http://1.2.3.4/&#39;);</code><br>或者加载背景<br><code>{}body {ba
 <p>生活不能将就，岁月不能遗忘。</p>
 <p>生活不止眼前的狗血，还有尸和元芳。</p>
 ]]></content>
-    </entry>
-    
-    <entry>
-      <title><![CDATA[tags]]></title>
-      <url>/tags/index.html</url>
-      <content type="html"></content>
     </entry>
     
   
