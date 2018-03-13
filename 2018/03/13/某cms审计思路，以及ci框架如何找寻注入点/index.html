@@ -8,16 +8,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="某cms审计思路，以及ci框架如何找寻注入点ABOUT  之前闲着没事的时候审的某cms，之前看一群大表哥刷过一次这个cms，想着看看还能不能赶得上分一杯羹，还是审计出来些东西，来说一说一个前台注入吧，orz后面竟然发现提前一周有大表哥交了这个，虽然撞了，但是还是分析分析这个有关的一些思路吧。 首先找注入，思路其实很简单，一个模型一个模型的去看sql，有些猥琐思路，一般过滤都是单引号双引号这些，很">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Leej">
+<meta property="og:title" content="某cms审计思路，以及ci框架如何找寻注入点">
 <meta property="og:url" content="http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/index.html">
 <meta property="og:site_name" content="Leej">
 <meta property="og:description" content="某cms审计思路，以及ci框架如何找寻注入点ABOUT  之前闲着没事的时候审的某cms，之前看一群大表哥刷过一次这个cms，想着看看还能不能赶得上分一杯羹，还是审计出来些东西，来说一说一个前台注入吧，orz后面竟然发现提前一周有大表哥交了这个，虽然撞了，但是还是分析分析这个有关的一些思路吧。 首先找注入，思路其实很简单，一个模型一个模型的去看sql，有些猥琐思路，一般过滤都是单引号双引号这些，很">
 <meta property="og:locale" content="en">
 <meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1fp1zqcqkjmj20qz0ewmy2.jpg">
 <meta property="og:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1fp1zrfx4knj217j0jpju3.jpg">
-<meta property="og:updated_time" content="2018-03-13T03:50:23.104Z">
+<meta property="og:updated_time" content="2018-03-13T05:37:50.551Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Leej">
+<meta name="twitter:title" content="某cms审计思路，以及ci框架如何找寻注入点">
 <meta name="twitter:description" content="某cms审计思路，以及ci框架如何找寻注入点ABOUT  之前闲着没事的时候审的某cms，之前看一群大表哥刷过一次这个cms，想着看看还能不能赶得上分一杯羹，还是审计出来些东西，来说一说一个前台注入吧，orz后面竟然发现提前一周有大表哥交了这个，虽然撞了，但是还是分析分析这个有关的一些思路吧。 首先找注入，思路其实很简单，一个模型一个模型的去看sql，有些猥琐思路，一般过滤都是单引号双引号这些，很">
 <meta name="twitter:image" content="http://ww1.sinaimg.cn/large/7e2785d1ly1fp1zqcqkjmj20qz0ewmy2.jpg">
     
@@ -39,7 +39,7 @@
         
     
     <!-- title -->
-    <title>Leej</title>
+    <title>某cms审计思路，以及ci框架如何找寻注入点</title>
     <!-- styles -->
     <link rel="stylesheet" href="/css/style.css">
     <!-- rss -->
@@ -88,15 +88,15 @@
     <div id="share" style="display: none">
       <ul>
   <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&text="><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&is_video=false&description="><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=&body=Check out this article: http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&name=&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&text=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&is_video=false&description=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=某cms审计思路，以及ci框架如何找寻注入点&body=Check out this article: http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&name=某cms审计思路，以及ci框架如何找寻注入点&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -113,7 +113,7 @@
   <header>
     
     <h1 class="posttitle" itemprop="name headline">
-        
+        某cms审计思路，以及ci框架如何找寻注入点
     </h1>
 
 
@@ -124,7 +124,7 @@
       </span>
       
     <div class="postdate">
-        <time datetime="2018-03-13T03:50:23.104Z" itemprop="datePublished">2018-03-13</time>
+        <time datetime="2018-03-13T05:36:08.000Z" itemprop="datePublished">2018-03-13</time>
     </div>
 
 
@@ -189,15 +189,15 @@
     <div id="share-footer" style="display: none">
       <ul>
   <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&text="><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&is_video=false&description="><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=&body=Check out this article: http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title="><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&name=&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&text=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&is_video=false&description=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=某cms审计思路，以及ci框架如何找寻注入点&body=Check out this article: http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&title=某cms审计思路，以及ci框架如何找寻注入点"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://blog.leej.me/2018/03/13/某cms审计思路，以及ci框架如何找寻注入点/&name=某cms审计思路，以及ci框架如何找寻注入点&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
