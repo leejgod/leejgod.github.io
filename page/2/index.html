@@ -77,198 +77,56 @@
 
         
         <section id="about">
-  
+  <% if (config.description) { %>
+    <%- markdown(config.description) %>
+  <% } %>
   <p style="display: inline">
-    
-      Find me on
+    <% if (theme.customize.social_links) { %>
+      <%= __('index.find_me_on') %>
       <p id="socialinfo">
-        
-        
-        
-          <a class="icon" target="_blank" href="https://github.com/leejgod"><i class="fa fa-github"></i></a>, 
-          
-        
-          <a class="icon" target="_blank" href="http://baidu.com?weibo"><i class="fa fa-weibo"></i></a>, 
-          
-        
-          <a class="icon" target="_blank" href="/"><i class="fa fa-facebook"></i></a> and 
-          
-        
-          <a class="icon" target="_blank" href="/"><i class="fa fa-linkedin"></i></a>
-          
-        
+        <% var nb_links = Object.keys(theme.customize.social_links).length %>
+        <% var i = 0 %>
+        <% for(var link in theme.customize.social_links) { %>
+          <a class="icon" target="_blank" href="<%- url_for(theme.customize.social_links[link]) %>"><i class="fa fa-<%= link %>"></i></a><%= ( nb_links > 0 && i < nb_links-1 ? ( i == nb_links-2 ? ' '+__('index.enum_and')+' ' : __('index.enum_comma')+' ' ) : '' ) %>
+          <% i+=1 %>
+        <% } %>
       </p>.
-    
+    <% } %>
   </p>
 </section>
 
 <section id="writing">
-  <span class="h1"><a href="/archives">Writing</a></span>
+  <span class="h1"><a href="<%- url_for("archives") %>"><%= __('index.articles') %></a></span>
   <ul class="post-list">
-    
-      
-    
-    
+    <% if (theme.customize.show_all_posts) { %>
+      <% var show_posts = page.posts.sort('date', 'desc') %>
+    <% } else { %>
+      <% var show_posts = site.posts.sort('date', 'desc').limit(theme.customize.post_count || 5) %>
+    <% } %>
+    <% show_posts.each(function(post, i){ %>
       <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-05-15T16:00:00.000Z" itemprop="datePublished">2017-05-16</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/05/16/凤求凰/">凤求凰！</a>
-    
-
-
-</span>
+        <%- partial('_partial/post/date', { post: post, class_name: 'meta' }) %>
+        <span><%- partial('_partial/post/title', { post: post, index: true, class_name: '' }) %></span>
       </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-05-15T02:04:47.000Z" itemprop="datePublished">2017-05-15</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/05/15/分组密码CBC加密缺陷/">分组密码CBC加密缺陷</a>
-    
-
-
-</span>
-      </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-04-24T16:23:31.000Z" itemprop="datePublished">2017-04-25</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/04/25/False注入,以及SQL注入技巧总结/">False注入,以及SQL注入技巧总结</a>
-    
-
-
-</span>
-      </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-04-24T00:07:17.000Z" itemprop="datePublished">2017-04-24</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/04/24/RPO攻击/">RPO攻击</a>
-    
-
-
-</span>
-      </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-02-07T08:08:56.000Z" itemprop="datePublished">2017-02-07</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/02/07/博客小记/">博客小记</a>
-    
-
-
-</span>
-      </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-01-18T20:06:44.000Z" itemprop="datePublished">2017-01-19</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/01/19/Pthon学习之教务处的登录，以及安全思考/">Pthon学习之教务处的登录，以及安全思考</a>
-    
-
-
-</span>
-      </li>
-    
-      <li class="post-item">
-        
-    <div class="meta">
-        <time datetime="2017-01-18T19:22:18.000Z" itemprop="datePublished">2017-01-19</time>
-    </div>
-
-
-        <span>
-    
-        <a class="" href="/2017/01/19/Hash长度扩展攻击/">Hash长度扩展攻击</a>
-    
-
-
-</span>
-      </li>
-    
+    <% }); %>
   </ul>
-  
-    
-    <div class="pagination">
-        
-            <a href="/"><i class="fa fa-angle-left"></i></a>
-        
-        <span class="page-number">Page 2 of 2</span>
-        
-    </div>
-
-
-  
+  <% if (theme.customize.show_all_posts) { %>
+    <%- partial('_partial/pagination') %>
+  <% } %>
 </section>
 
-
+<% if (site.data.projects) { %>
 <section id="projects">
-  <span class="h1"><a href="https://github.com/leejgod">Projects</a></span>
+  <span class="h1"><a href="<%- url_for(theme.projects_url) %>"><%= __('index.projects') %></a></span>
   <ul class="project-list">
-    
+    <% for(var obj in site.data.projects){ %>
       <li class="project-item">
-        <a href="https://hexo.io/">Hexo</a>: A fast, simple &amp; powerful blog framework
+        <a href="<%= site.data.projects[obj].url %>"><%= site.data.projects[obj].name %></a>: <%= site.data.projects[obj].desc %>
       </li>
-    
-      <li class="project-item">
-        <a href="http://fontawesome.io/">Font Awesome</a>: The iconic font and CSS toolkit
-      </li>
-    
+    <% } %>
   </ul>
 </section>
-
-
-
-<section id="link">
-  <span class="h1"><a href="/">Link</a></span>
-  <ul class="link-list">
-    
-      <li class="project-item">
-        <a href="https://blog.leej.me/">Leej</a>: hack by leej
-      </li>
-    
-      <li class="project-item">
-        <a href="http://foreversong.cn/">ADog</a>: ADog——代码审计爱好者
-      </li>
-    
-  </ul>
-</section>
-
+<% } %>
 
     </div>
     
